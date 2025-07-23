@@ -1,19 +1,16 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { 
   Play, 
   Pause, 
-  Shuffle, 
-  Square, 
-  Settings,
-  ChevronLeft,
-  Zap,
-  Sparkles,
-  MousePointer,
-  Eraser,
-  Hash,
+  Settings2,
+  Shuffle,
   Star,
+  Square,
   Circle,
   Hexagon,
+  ChevronLeft,
+  Sparkles,
+  Hash,
   AlertCircle
 } from 'lucide-react'
 
@@ -177,52 +174,6 @@ fn main(@location(0) @interpolate(flat) cellData: u32) -> @location(0) vec4f {
 }
 `;
 
-// Pattern definitions
-const patterns = {
-  glider: [
-    [0, 1], [1, -1], [1, 0], [1, 1], [-1, 0]
-  ],
-  pulsar: [
-    [0,2],[0,3],[0,4],[0,8],[0,9],[0,10],
-    [2,0],[2,5],[2,7],[2,12],
-    [3,0],[3,5],[3,7],[3,12],
-    [4,0],[4,5],[4,7],[4,12],
-    [5,2],[5,3],[5,4],[5,8],[5,9],[5,10],
-    [7,2],[7,3],[7,4],[7,8],[7,9],[7,10],
-    [8,0],[8,5],[8,7],[8,12],
-    [9,0],[9,5],[9,7],[9,12],
-    [10,0],[10,5],[10,7],[10,12],
-    [12,2],[12,3],[12,4],[12,8],[12,9],[12,10]
-  ],
-  gosper: [
-    [0,4],[0,5],[1,4],[1,5],[10,4],[10,5],[10,6],[11,3],[11,7],[12,2],[12,8],
-    [13,2],[13,8],[14,5],[15,3],[15,7],[16,4],[16,5],[16,6],[17,5],[20,2],
-    [20,3],[20,4],[21,2],[21,3],[21,4],[22,1],[22,5],[24,0],[24,1],[24,5],
-    [24,6],[34,2],[34,3],[35,2],[35,3]
-  ],
-  pentadecathlon: [
-    [-4,0],[-3,0],[-2,-1],[-2,1],[-1,0],[0,0],[1,0],[2,-1],[2,1],[3,0],[4,0]
-  ],
-  acorn: [
-    [0,0],[1,0],[1,2],[3,1],[4,0],[5,0],[6,0]
-  ],
-  rpentomino: [
-    [0,1],[0,2],[1,0],[1,1],[2,1]
-  ],
-  diehard: [
-    [0,0],[1,0],[1,1],[5,1],[6,-1],[6,1],[7,1]
-  ],
-  spaceship: [
-    [0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,3],[3,0],[3,3]
-  ],
-  blinker: [
-    [0,1],[1,1],[2,1]
-  ]
-}
-
-// Draw mode types
-type DrawMode = 'draw' | 'erase' | null
-
 // Slider component
 const Slider = ({ label, value, min, max, step, onChange, unit = '' }: any) => (
   <div style={{ marginBottom: '20px' }}>
@@ -265,12 +216,10 @@ const Slider = ({ label, value, min, max, step, onChange, unit = '' }: any) => (
 export default function GameOfLife() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [fps, setFps] = useState(30)
   const [generation, setGeneration] = useState(0)
-  const [density, setDensity] = useState(25)
+  const [fps, setFps] = useState(30)
+  const [density, setDensity] = useState(30)
   const [isControlsCollapsed, setIsControlsCollapsed] = useState(false)
-  const [drawMode, setDrawMode] = useState<DrawMode>(null)
-  const [population, setPopulation] = useState(0)
   const [webGPUSupported, setWebGPUSupported] = useState(true)
   const [isInitialized, setIsInitialized] = useState(false)
   const [useNeighborhoodColors, setUseNeighborhoodColors] = useState(true)
@@ -300,11 +249,8 @@ export default function GameOfLife() {
   const contextRef = useRef<GPUCanvasContext | null>(null)
   const computePipelineRef = useRef<GPUComputePipeline | null>(null)
   const renderPipelineRef = useRef<GPURenderPipeline | null>(null)
-  const coloredRenderPipelineRef = useRef<GPURenderPipeline | null>(null)
-  const simpleRenderPipelineRef = useRef<GPURenderPipeline | null>(null)
   const bindGroup0Ref = useRef<GPUBindGroup | null>(null)
   const bindGroup1Ref = useRef<GPUBindGroup | null>(null)
-  const renderBindGroupRef = useRef<GPUBindGroup | null>(null)
   const uniformBindGroupRef = useRef<GPUBindGroup | null>(null)
   const cellBuffersRef = useRef<GPUBuffer[]>([])
   const squareBufferRef = useRef<GPUBuffer | null>(null)
@@ -847,43 +793,6 @@ export default function GameOfLife() {
     }
   }, [isPlaying, fps, gridSize, isInitialized, camera, useNeighborhoodColors])
   
-  // Pattern loading
-  const loadPattern = useCallback((patternName: keyof typeof patterns) => {
-    const device = deviceRef.current
-    const cellBuffers = cellBuffersRef.current
-    if (!device || cellBuffers.length !== 2) return
-    
-    const pattern = patterns[patternName]
-    const { width, height } = gridSize
-    const cells = new Uint32Array(width * height)
-    
-    // Center pattern
-    const centerX = Math.floor(width / 2)
-    const centerY = Math.floor(height / 2)
-    
-    pattern.forEach(([dx, dy]) => {
-      const x = centerX + dx
-      const y = centerY + dy
-      if (x >= 0 && x < width && y >= 0 && y < height) {
-        cells[y * width + x] = 1
-      }
-    })
-    
-    // Write to both buffers
-    device.queue.writeBuffer(cellBuffers[0], 0, cells)
-    device.queue.writeBuffer(cellBuffers[1], 0, cells)
-    currentBufferRef.current = 0
-    setGeneration(0)
-    setIsPlaying(false)
-    
-    // Center camera on pattern with zoom
-    setCamera({
-      x: width / 2,
-      y: height / 2,
-      zoom: (patternName === 'gosper' ? 5 : 10) / devicePixelRatio
-    })
-  }, [gridSize, devicePixelRatio])
-  
   const resetGrid = useCallback((pattern?: string) => {
     if (!deviceRef.current || !cellBuffersRef.current.length) return
     
@@ -1067,7 +976,6 @@ export default function GameOfLife() {
     device.queue.writeBuffer(buffers[1], 0, gridWithNeighborhoods)
     
     setGeneration(0)
-    setPopulation(gridWithNeighborhoods.filter(cell => (cell & 1) === 1).length)
   }, [deviceRef, cellBuffersRef, gridSize, density])
   
   const handleClear = useCallback(() => {
@@ -1323,7 +1231,7 @@ export default function GameOfLife() {
               e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)'
             }}
           >
-            <Settings size={20} color="#fff" />
+            <Settings2 size={20} color="#fff" />
           </div>
         ) : (
           <div style={controlsStyle.expanded}>

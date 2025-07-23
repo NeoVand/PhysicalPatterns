@@ -1,5 +1,10 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { 
+  BrowserRouter, 
+  Routes, 
+  Route, 
+  Link
+} from 'react-router-dom'
 import { 
   Sparkles, 
   Waves, 
@@ -337,10 +342,6 @@ function HomePage() {
 
 // Router component to handle GitHub Pages routing
 function AppRouter() {
-  const location = useLocation()
-  const isGitHubPages = window.location.hostname.includes('github.io')
-  const basename = isGitHubPages ? '/PhysicalPatterns' : ''
-  
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
@@ -364,8 +365,8 @@ export default function App() {
   const basename = isGitHubPages ? '/PhysicalPatterns' : ''
   
   return (
-    <Router basename={basename}>
+    <BrowserRouter basename={basename}>
       <AppRouter />
-    </Router>
+    </BrowserRouter>
   )
 }
