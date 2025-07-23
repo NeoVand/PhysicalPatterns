@@ -1,0 +1,421 @@
+Directory structure:
+└── gameOfLife/
+    ├── compute.wgsl
+    ├── frag.wgsl
+    ├── index.html
+    ├── main.ts
+    ├── meta.ts
+    └── vert.wgsl
+
+
+Files Content:
+
+================================================
+FILE: sample/gameOfLife/compute.wgsl
+================================================
+@binding(0) @group(0) var<storage, read> size: vec2u;
+@binding(1) @group(0) var<storage, read> current: array<u32>;
+@binding(2) @group(0) var<storage, read_write> next: array<u32>;
+
+override blockSize = 8;
+
+fn getIndex(x: u32, y: u32) -> u32 {
+  let h = size.y;
+  let w = size.x;
+
+  return (y % h) * w + (x % w);
+}
+
+fn getCell(x: u32, y: u32) -> u32 {
+  return current[getIndex(x, y)];
+}
+
+fn countNeighbors(x: u32, y: u32) -> u32 {
+  return getCell(x - 1, y - 1) + getCell(x, y - 1) + getCell(x + 1, y - 1) + 
+         getCell(x - 1, y) +                         getCell(x + 1, y) + 
+         getCell(x - 1, y + 1) + getCell(x, y + 1) + getCell(x + 1, y + 1);
+}
+
+@compute @workgroup_size(blockSize, blockSize)
+fn main(@builtin(global_invocation_id) grid: vec3u) {
+  let x = grid.x;
+  let y = grid.y;
+  let n = countNeighbors(x, y);
+  next[getIndex(x, y)] = select(u32(n == 3u), u32(n == 2u || n == 3u), getCell(x, y) == 1u); 
+} 
+
+
+
+================================================
+FILE: sample/gameOfLife/frag.wgsl
+================================================
+@fragment
+fn main(@location(0) cell: f32) -> @location(0) vec4f {
+  return vec4f(cell, cell, cell, 1.);
+}
+
+
+
+================================================
+FILE: sample/gameOfLife/index.html
+================================================
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>webgpu-samples: gameOfLife</title>
+    <!-- WebGPUCompatibilityMode origin token for https://webgpu.github.io expiring April 21, 2026 -->
+    <meta
+      http-equiv="origin-trial"
+      content="Aktu7041jFm00ls336/bRinubASRzg1tPs4wxXOZkF1uP0LaIURinGC7ti0Vf352Q9OKFL1siRfpptLjNIKpKQcAAABheyJvcmlnaW4iOiJodHRwczovL3dlYmdwdS5naXRodWIuaW86NDQzIiwiZmVhdHVyZSI6IldlYkdQVUNvbXBhdGliaWxpdHlNb2RlIiwiZXhwaXJ5IjoxNzc2NzI5NjAwfQ=="
+    />
+    <!-- WebGPUCompatibilityMode origin token for http://localhost:8080 expiring April 21, 2026 -->
+    <meta
+      http-equiv="origin-trial"
+      content="AqW27Ayelg5vbcAaYcweU+sLjZq5r6idHCWU4MJgnkP1YBgmOMqazdGuakSnGylTkyA/bRHkCJZFdfYjFlylOgAAAABaeyJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJmZWF0dXJlIjoiV2ViR1BVQ29tcGF0aWJpbGl0eU1vZGUiLCJleHBpcnkiOjE3NzY3Mjk2MDB9"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      html, body {
+        margin: 0;      /* remove default margin */
+        height: 100%;   /* make body fill the browser window */
+        display: flex;
+        place-content: center center;
+      }
+      canvas {
+        width: 600px;
+        height: 600px;
+        max-width: 100%;
+        display: block;
+      }
+    </style>
+    <script defer src="main.js" type="module"></script>
+    <script defer type="module" src="../../js/iframe-helper.js"></script>
+  </head>
+  <body>
+    <canvas></canvas>
+  </body>
+</html>
+
+
+
+================================================
+FILE: sample/gameOfLife/main.ts
+================================================
+import { GUI } from 'dat.gui';
+import computeWGSL from './compute.wgsl';
+import vertWGSL from './vert.wgsl';
+import fragWGSL from './frag.wgsl';
+import { quitIfWebGPUNotAvailable } from '../util';
+
+const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+const adapter = await navigator.gpu?.requestAdapter({
+  featureLevel: 'compatibility',
+});
+const device = await adapter?.requestDevice();
+quitIfWebGPUNotAvailable(adapter, device);
+
+const context = canvas.getContext('webgpu') as GPUCanvasContext;
+const devicePixelRatio = window.devicePixelRatio;
+canvas.width = canvas.clientWidth * devicePixelRatio;
+canvas.height = canvas.clientHeight * devicePixelRatio;
+const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+
+context.configure({
+  device,
+  format: presentationFormat,
+});
+
+const GameOptions = {
+  width: 128,
+  height: 128,
+  timestep: 4,
+  workgroupSize: 8,
+};
+
+const computeShader = device.createShaderModule({ code: computeWGSL });
+const bindGroupLayoutCompute = device.createBindGroupLayout({
+  entries: [
+    {
+      binding: 0,
+      visibility: GPUShaderStage.COMPUTE,
+      buffer: {
+        type: 'read-only-storage',
+      },
+    },
+    {
+      binding: 1,
+      visibility: GPUShaderStage.COMPUTE,
+      buffer: {
+        type: 'read-only-storage',
+      },
+    },
+    {
+      binding: 2,
+      visibility: GPUShaderStage.COMPUTE,
+      buffer: {
+        type: 'storage',
+      },
+    },
+  ],
+});
+
+const squareVertices = new Uint32Array([0, 0, 0, 1, 1, 0, 1, 1]);
+const squareBuffer = device.createBuffer({
+  size: squareVertices.byteLength,
+  usage: GPUBufferUsage.VERTEX,
+  mappedAtCreation: true,
+});
+new Uint32Array(squareBuffer.getMappedRange()).set(squareVertices);
+squareBuffer.unmap();
+
+const squareStride: GPUVertexBufferLayout = {
+  arrayStride: 2 * squareVertices.BYTES_PER_ELEMENT,
+  stepMode: 'vertex',
+  attributes: [
+    {
+      shaderLocation: 1,
+      offset: 0,
+      format: 'uint32x2',
+    },
+  ],
+};
+
+const vertexShader = device.createShaderModule({ code: vertWGSL });
+const fragmentShader = device.createShaderModule({ code: fragWGSL });
+let commandEncoder: GPUCommandEncoder;
+
+const bindGroupLayoutRender = device.createBindGroupLayout({
+  entries: [
+    {
+      binding: 0,
+      visibility: GPUShaderStage.VERTEX,
+      buffer: {
+        type: 'uniform',
+      },
+    },
+  ],
+});
+
+const cellsStride: GPUVertexBufferLayout = {
+  arrayStride: Uint32Array.BYTES_PER_ELEMENT,
+  stepMode: 'instance',
+  attributes: [
+    {
+      shaderLocation: 0,
+      offset: 0,
+      format: 'uint32',
+    },
+  ],
+};
+
+function addGUI() {
+  const gui = new GUI();
+  gui.add(GameOptions, 'timestep', 1, 60, 1);
+  gui.add(GameOptions, 'width', 16, 1024, 16).onFinishChange(resetGameData);
+  gui.add(GameOptions, 'height', 16, 1024, 16).onFinishChange(resetGameData);
+  gui
+    .add(GameOptions, 'workgroupSize', [4, 8, 16])
+    .onFinishChange(resetGameData);
+}
+
+let wholeTime = 0,
+  loopTimes = 0,
+  buffer0: GPUBuffer,
+  buffer1: GPUBuffer;
+let render: () => void;
+function resetGameData() {
+  // compute pipeline
+  const computePipeline = device.createComputePipeline({
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayoutCompute],
+    }),
+    compute: {
+      module: computeShader,
+      constants: {
+        blockSize: GameOptions.workgroupSize,
+      },
+    },
+  });
+  const sizeBuffer = device.createBuffer({
+    size: 2 * Uint32Array.BYTES_PER_ELEMENT,
+    usage:
+      GPUBufferUsage.STORAGE |
+      GPUBufferUsage.UNIFORM |
+      GPUBufferUsage.COPY_DST |
+      GPUBufferUsage.VERTEX,
+    mappedAtCreation: true,
+  });
+  new Uint32Array(sizeBuffer.getMappedRange()).set([
+    GameOptions.width,
+    GameOptions.height,
+  ]);
+  sizeBuffer.unmap();
+  const length = GameOptions.width * GameOptions.height;
+  const cells = new Uint32Array(length);
+  for (let i = 0; i < length; i++) {
+    cells[i] = Math.random() < 0.25 ? 1 : 0;
+  }
+
+  buffer0 = device.createBuffer({
+    size: cells.byteLength,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX,
+    mappedAtCreation: true,
+  });
+  new Uint32Array(buffer0.getMappedRange()).set(cells);
+  buffer0.unmap();
+
+  buffer1 = device.createBuffer({
+    size: cells.byteLength,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.VERTEX,
+  });
+
+  const bindGroup0 = device.createBindGroup({
+    layout: bindGroupLayoutCompute,
+    entries: [
+      { binding: 0, resource: { buffer: sizeBuffer } },
+      { binding: 1, resource: { buffer: buffer0 } },
+      { binding: 2, resource: { buffer: buffer1 } },
+    ],
+  });
+
+  const bindGroup1 = device.createBindGroup({
+    layout: bindGroupLayoutCompute,
+    entries: [
+      { binding: 0, resource: { buffer: sizeBuffer } },
+      { binding: 1, resource: { buffer: buffer1 } },
+      { binding: 2, resource: { buffer: buffer0 } },
+    ],
+  });
+
+  const renderPipeline = device.createRenderPipeline({
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayoutRender],
+    }),
+    primitive: {
+      topology: 'triangle-strip',
+    },
+    vertex: {
+      module: vertexShader,
+      buffers: [cellsStride, squareStride],
+    },
+    fragment: {
+      module: fragmentShader,
+      targets: [
+        {
+          format: presentationFormat,
+        },
+      ],
+    },
+  });
+
+  const uniformBindGroup = device.createBindGroup({
+    layout: renderPipeline.getBindGroupLayout(0),
+    entries: [
+      {
+        binding: 0,
+        resource: {
+          buffer: sizeBuffer,
+          offset: 0,
+          size: 2 * Uint32Array.BYTES_PER_ELEMENT,
+        },
+      },
+    ],
+  });
+
+  loopTimes = 0;
+  render = () => {
+    const view = context.getCurrentTexture().createView();
+    const renderPass: GPURenderPassDescriptor = {
+      colorAttachments: [
+        {
+          view,
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    };
+    commandEncoder = device.createCommandEncoder();
+
+    // compute
+    const passEncoderCompute = commandEncoder.beginComputePass();
+    passEncoderCompute.setPipeline(computePipeline);
+    passEncoderCompute.setBindGroup(0, loopTimes ? bindGroup1 : bindGroup0);
+    passEncoderCompute.dispatchWorkgroups(
+      GameOptions.width / GameOptions.workgroupSize,
+      GameOptions.height / GameOptions.workgroupSize
+    );
+    passEncoderCompute.end();
+    // render
+    const passEncoderRender = commandEncoder.beginRenderPass(renderPass);
+    passEncoderRender.setPipeline(renderPipeline);
+    passEncoderRender.setVertexBuffer(0, loopTimes ? buffer1 : buffer0);
+    passEncoderRender.setVertexBuffer(1, squareBuffer);
+    passEncoderRender.setBindGroup(0, uniformBindGroup);
+    passEncoderRender.draw(4, length);
+    passEncoderRender.end();
+
+    device.queue.submit([commandEncoder.finish()]);
+  };
+}
+
+addGUI();
+resetGameData();
+
+(function loop() {
+  if (GameOptions.timestep) {
+    wholeTime++;
+    if (wholeTime >= GameOptions.timestep) {
+      render();
+      wholeTime -= GameOptions.timestep;
+      loopTimes = 1 - loopTimes;
+    }
+  }
+
+  requestAnimationFrame(loop);
+})();
+
+
+
+================================================
+FILE: sample/gameOfLife/meta.ts
+================================================
+export default {
+  name: "Conway's Game of Life",
+  description:
+    "This example shows how to make Conway's game of life. First, use compute shader to calculate how cells grow or die. Then use render pipeline to draw cells by using instance mesh.",
+  filename: __DIRNAME__,
+  sources: [
+    { path: 'main.ts' },
+    { path: 'compute.wgsl' },
+    { path: 'vert.wgsl' },
+    { path: 'frag.wgsl' },
+  ],
+};
+
+
+
+================================================
+FILE: sample/gameOfLife/vert.wgsl
+================================================
+struct Out {
+  @builtin(position) pos: vec4f,
+  @location(0) cell: f32,
+}
+
+@binding(0) @group(0) var<uniform> size: vec2u;
+
+@vertex
+fn main(@builtin(instance_index) i: u32, @location(0) cell: u32, @location(1) pos: vec2u) -> Out {
+  let w = size.x;
+  let h = size.y;
+  let x = (f32(i % w + pos.x) / f32(w) - 0.5) * 2. * f32(w) / f32(max(w, h));
+  let y = (f32((i - (i % w)) / w + pos.y) / f32(h) - 0.5) * 2. * f32(h) / f32(max(w, h));
+
+  return Out(vec4f(x, y, 0., 1.), f32(cell));
+}
+
+

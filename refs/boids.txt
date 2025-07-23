@@ -1,0 +1,3281 @@
+Directory structure:
+└── neovand-boids/
+    ├── README.md
+    ├── eslint.config.js
+    ├── index.html
+    ├── package.json
+    ├── tsconfig.app.json
+    ├── tsconfig.json
+    ├── tsconfig.node.json
+    ├── vite.config.ts
+    ├── src/
+    │   ├── App.css
+    │   ├── App.tsx
+    │   ├── index.css
+    │   ├── main.tsx
+    │   ├── vite-env.d.ts
+    │   ├── components/
+    │   │   ├── boids/
+    │   │   │   ├── BoidsCanvas.tsx
+    │   │   │   └── BoidsSimulation.tsx
+    │   │   └── controls/
+    │   │       └── BoidsControls.tsx
+    │   ├── hooks/
+    │   │   └── useBoids.ts
+    │   └── utils/
+    │       └── boids.ts
+    └── .github/
+        └── workflows/
+            └── deploy.yml
+
+
+Files Content:
+
+================================================
+FILE: README.md
+================================================
+# Boids Flocking Simulation
+
+An interactive implementation of Craig Reynolds' Boids flocking algorithm with WebGL rendering and real-time controls.
+
+## Live Demo
+
+Check out the live demo at [https://neovand.github.io/boids/](https://neovand.github.io/boids/)
+
+
+![Boids Simulation Screenshot](./screenshot.png)
+
+## Overview
+
+This project simulates the emergent flocking behavior of birds (boids) using simple rules:
+- **Separation**: Avoid crowding neighbors
+- **Alignment**: Steer towards the average heading of neighbors
+- **Cohesion**: Steer towards the average position of neighbors
+
+The simulation features spatial partitioning for performance optimization, allowing thousands of boids to be simulated in real-time.
+
+## Features
+
+- **High-performance WebGL rendering** with Canvas2D fallback
+- **Interactive controls** to adjust simulation parameters in real-time
+- **Mouse/touch interaction** to attract boids to cursor position
+- **Multiple particle types**: disk, dot, and trail visualizations
+- **Dynamic colorization modes** based on speed, orientation, neighbors, and more
+- **Optimized with spatial partitioning** for O(n) instead of O(n²) performance
+- **Responsive design** that works on desktop and mobile devices
+- **Edge behaviors**: wrap, bounce, or avoid
+- **Adjustable parameters**:
+  - Alignment force
+  - Cohesion force
+  - Separation force
+  - Perception radius
+  - Maximum speed
+  - Attraction force
+  - Trail length
+  - Population size
+
+## Technical Stack
+
+- **React** with functional components and hooks
+- **TypeScript** for type safety
+- **WebGL** for high-performance rendering
+- **Material UI** for the control interface
+- **Vite** for fast development and building
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/neovand/boids.git
+cd boids
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+## Usage
+
+1. Open the application in your browser (default: http://localhost:5173)
+2. Use the control panel on the right to adjust simulation parameters
+3. Click and drag on the canvas to attract boids to your cursor
+4. Experiment with different particle types and edge behaviors
+5. Adjust parameters to observe different flocking patterns
+
+## Controls
+
+- **Type**: Choose between disk, dot, or trail visualization
+- **Edge**: Select wrap, bounce, or avoid behavior at simulation boundaries
+- **Colorize**: Select coloring mode (default, speed, orientation, random, neighbors)
+- **Alignment**: How strongly boids align with neighbors
+- **Cohesion**: How strongly boids are attracted to flock center
+- **Separation**: How strongly boids avoid neighbors
+- **Perception**: How far each boid can see
+- **Max Speed**: Maximum velocity of boids
+- **Attraction**: Strength of attraction to cursor when clicked
+- **Trail Length**: Length of trail when using trail visualization
+- **Population**: Number of boids to simulate
+- **Reset**: Reset the simulation with current settings
+
+## Colorization Modes
+
+- **Default**: Uses a preset color palette based on boid ID
+- **Speed**: Colors boids from blue (slow) to red (fast) based on velocity
+- **Orientation**: Colors boids based on their direction of movement
+- **Random**: Assigns consistent random colors based on boid ID
+- **Neighbors**: Colors boids based on how many neighbors they have (blue for few, red for many)
+
+## How It Works
+
+The simulation implements Craig Reynolds' Boids algorithm with modern optimizations:
+
+1. **Spatial Partitioning**: The simulation space is divided into a grid, allowing boids to only check nearby cells for neighbors, dramatically improving performance.
+
+2. **WebGL Rendering**: Custom shaders provide high-performance rendering, with Canvas2D fallback for compatibility.
+
+3. **State Management**: React hooks manage the simulation state, with efficient updates to prevent unnecessary re-renders.
+
+4. **Vector Math**: Custom vector operations handle the physics calculations for boid movement.
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── boids/
+│   │   ├── BoidsCanvas.tsx    # WebGL/Canvas rendering
+│   │   └── BoidsSimulation.tsx # Main simulation component
+│   └── controls/
+│       └── BoidsControls.tsx  # UI controls
+├── utils/
+│   └── boids.ts              # Boids algorithm implementation
+└── App.tsx                   # Main application entry
+```
+
+## Performance Tips
+
+- For best performance, use a device with WebGL support
+- Reduce the population size on lower-powered devices
+- Trail visualization is more performance-intensive than other types
+- Use the colorization modes to better visualize boid behavior
+
+## Credits and Acknowledgments
+
+- Original Boids algorithm by Craig Reynolds: https://www.red3d.com/cwr/boids/
+- WebGL shader implementations inspired by various open-source projects
+- Built with React, TypeScript, and Material UI
+
+## License
+
+MIT
+
+
+
+================================================
+FILE: eslint.config.js
+================================================
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
+)
+
+
+
+================================================
+FILE: index.html
+================================================
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Boids Flocking Simulation</title>
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+
+
+================================================
+FILE: package.json
+================================================
+{
+  "name": "boids",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.0.2",
+    "@mui/material": "^7.0.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react-swc": "^3.8.0",
+    "eslint": "^9.22.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.26.1",
+    "vite": "^6.3.1"
+  }
+}
+
+
+
+================================================
+FILE: tsconfig.app.json
+================================================
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
+}
+
+
+
+================================================
+FILE: tsconfig.json
+================================================
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+
+
+================================================
+FILE: tsconfig.node.json
+================================================
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+
+
+================================================
+FILE: vite.config.ts
+================================================
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react-swc'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  // Set base to repository name, use '/' if deploying to custom domain
+  base: '/boids/',
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js'
+      }
+    }
+  }
+})
+
+
+
+================================================
+FILE: src/App.css
+================================================
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: #0f1215;
+  color: #e0e0e0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.boids-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+
+
+================================================
+FILE: src/App.tsx
+================================================
+import { useEffect, useState } from 'react';
+import './App.css';
+import { ThemeProvider, CssBaseline, createTheme } from '@mui/material';
+import { BoidsSimulation } from './components/boids/BoidsSimulation';
+
+// Create a custom dark theme
+const theme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#4169e1',
+    },
+    secondary: {
+      main: '#f06292',
+    },
+    background: {
+      default: '#000000',
+      paper: '#1a1e24',
+    },
+    text: {
+      primary: '#e0e0e0',
+      secondary: '#9e9e9e',
+    },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h5: {
+      fontWeight: 600,
+      letterSpacing: '-0.02em',
+    },
+    body2: {
+      fontSize: '0.875rem',
+    },
+  },
+  shape: {
+    borderRadius: 8,
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        html: {
+          margin: 0,
+          padding: 0,
+          height: '100%',
+          overflow: 'hidden'
+        },
+        body: {
+          margin: 0,
+          padding: 0,
+          height: '100%',
+          overflow: 'hidden',
+          scrollbarWidth: 'thin',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: '#1a1e24',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: '#4169e1',
+            borderRadius: '4px',
+          },
+        },
+        '#root': {
+          height: '100%'
+        },
+        '.App': {
+          height: '100vh',
+          width: '100vw',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }
+      },
+    },
+  },
+});
+
+function App() {
+  // Handle window resize to update canvas dimensions
+  const [, setDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+  
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <div className="App">
+        {/* Use the optimized BoidsSimulation component directly */}
+        <BoidsSimulation />
+      </div>
+    </ThemeProvider>
+  );
+}
+
+export default App;
+
+
+
+================================================
+FILE: src/index.css
+================================================
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+
+
+================================================
+FILE: src/main.tsx
+================================================
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
+
+
+
+================================================
+FILE: src/vite-env.d.ts
+================================================
+/// <reference types="vite/client" />
+
+
+
+================================================
+FILE: src/components/boids/BoidsCanvas.tsx
+================================================
+import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
+import { BoidsState } from '../../utils/boids';
+
+interface BoidsCanvasProps {
+  state: BoidsState;
+  className?: string;
+  onCursorPositionChange?: (position: { x: number; y: number } | null) => void;
+  onAttractionStateChange?: (isAttracting: boolean) => void;
+}
+
+// Simple WebGL shaders for robust point rendering
+const vertexShaderSource = `
+  attribute vec2 aPosition;
+  attribute vec2 aVelocity;
+  attribute vec4 aColor;
+  
+  uniform mat4 uProjectionMatrix;
+  uniform float uPointSize;
+  
+  varying vec2 vVelocity;
+  varying vec4 vColor;
+  
+  void main() {
+    gl_Position = uProjectionMatrix * vec4(aPosition, 0.0, 1.0);
+    gl_PointSize = uPointSize;
+    vVelocity = aVelocity;
+    vColor = aColor;
+  }
+`;
+
+const fragmentShaderSource = `
+  precision highp float;
+  
+  varying vec2 vVelocity;
+  varying vec4 vColor;
+  
+  void main() {
+    vec2 coord = gl_PointCoord - vec2(0.5);
+    float dist = length(coord);
+    
+    if (dist > 0.5) discard;
+    gl_FragColor = vColor;
+  }
+`;
+
+// Trail renderer shader sources
+const trailVertexShaderSource = `
+  attribute vec2 aPosition;
+  attribute vec4 aColor;
+  
+  uniform mat4 uProjectionMatrix;
+  
+  varying vec4 vColor;
+  
+  void main() {
+    gl_Position = uProjectionMatrix * vec4(aPosition, 0.0, 1.0);
+    vColor = aColor;
+  }
+`;
+
+const trailFragmentShaderSource = `
+  precision highp float;
+  
+  varying vec4 vColor;
+  
+  void main() {
+    gl_FragColor = vColor;
+  }
+`;
+
+// Cached projection matrix
+const createProjectionMatrix = (width: number, height: number): Float32Array => {
+  // Ensure positive dimensions to avoid division by zero
+  const safeWidth = Math.max(1, width);
+  const safeHeight = Math.max(1, height);
+
+  // Create an identity matrix first
+  const matrix = new Float32Array(16);
+  matrix.fill(0);
+  
+  // Set the identity components
+  matrix[0] = 1;
+  matrix[5] = 1;
+  matrix[10] = 1;
+  matrix[15] = 1;
+  
+  // Set orthographic projection values (for 2D rendering)
+  matrix[0] = 2 / safeWidth;
+  matrix[5] = -2 / safeHeight;
+  matrix[12] = -1;
+  matrix[13] = 1;
+  
+  // Validate the matrix
+  if (!isValidMatrix(matrix)) {
+    console.error("Failed to create valid projection matrix, using identity matrix instead");
+    const identity = new Float32Array(16);
+    identity.fill(0);
+    identity[0] = identity[5] = identity[10] = identity[15] = 1;
+    return identity;
+  }
+  
+  return matrix;
+};
+
+// Helper to validate a matrix
+const isValidMatrix = (matrix: any): boolean => {
+  return matrix && 
+         matrix instanceof Float32Array && 
+         matrix.length === 16 && 
+         !matrix.some(val => isNaN(val) || !isFinite(val));
+};
+
+// Geometry for different particle types
+
+// Indices for quad/disk geometry
+
+export const BoidsCanvas = ({ 
+  state, 
+  className = '',
+  onCursorPositionChange,
+  onAttractionStateChange
+}: BoidsCanvasProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const glRef = useRef<WebGLRenderingContext | null>(null);
+  const programRef = useRef<WebGLProgram | null>(null);
+  const trailProgramRef = useRef<WebGLProgram | null>(null);
+  
+  // WebGL buffer references to avoid recreation
+  const positionBufferRef = useRef<WebGLBuffer | null>(null);
+  const velocityBufferRef = useRef<WebGLBuffer | null>(null);
+  const colorBufferRef = useRef<WebGLBuffer | null>(null);
+  const projectionMatrixRef = useRef<Float32Array | null>(null);
+  
+  // Performance optimization - typed arrays for GPU data
+  const positionsArrayRef = useRef<Float32Array | null>(null);
+  const velocitiesArrayRef = useRef<Float32Array | null>(null);
+  const colorsArrayRef = useRef<Float32Array | null>(null);
+  
+  // Set initial projection matrix with default dimensions
+  useEffect(() => {
+    if (!projectionMatrixRef.current) {
+      // Create an initial projection matrix with safe values
+      const validWidth = state.canvasWidth > 0 ? state.canvasWidth : 100;
+      const validHeight = state.canvasHeight > 0 ? state.canvasHeight : 100;
+      projectionMatrixRef.current = createProjectionMatrix(validWidth, validHeight);
+    }
+    
+    // Initialize typed arrays for boids data if not already
+    if (!positionsArrayRef.current) {
+      const boidCount = Math.max(1000, state.boids.length); // Preallocate for efficiency
+      positionsArrayRef.current = new Float32Array(boidCount * 2);
+      velocitiesArrayRef.current = new Float32Array(boidCount * 2);
+      colorsArrayRef.current = new Float32Array(boidCount * 4);
+    }
+  }, [state.canvasWidth, state.canvasHeight, state.boids.length]);
+  
+  const [useWebGL, setUseWebGL] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [mousePos, setMousePos] = useState<{ x: number, y: number } | null>(null);
+  
+  // Generate a color palette for boids based on the primary color
+  const colorPalette = useMemo(() => generateColorPalette('#4169e1', 5), []);
+  
+  // Handle mouse/touch interaction
+  const getCanvasCoordinates = useCallback((e: MouseEvent | TouchEvent): { x: number, y: number } | null => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    
+    const rect = canvas.getBoundingClientRect();
+    let clientX: number, clientY: number;
+    
+    if ('touches' in e) {
+      // Touch event
+      if (e.touches.length === 0) return null;
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      // Mouse event
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    // Convert screen coordinates to canvas coordinates
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    
+    return { x, y };
+  }, []);
+  
+  // Handle mouse/touch start (down)
+  const handlePointerDown = useCallback((e: MouseEvent | TouchEvent) => {
+    const position = getCanvasCoordinates(e);
+    if (position) {
+      setIsDragging(true);
+      setMousePos(position);
+      onCursorPositionChange?.(position);
+      onAttractionStateChange?.(true);
+    }
+  }, [getCanvasCoordinates, onCursorPositionChange, onAttractionStateChange]);
+  
+  // Handle mouse/touch move
+  const handlePointerMove = useCallback((e: MouseEvent | TouchEvent) => {
+    // Only update position if currently attracting (button/touch is down)
+    if (state.isAttracting || isDragging) {
+      const position = getCanvasCoordinates(e);
+      if (position) {
+        setMousePos(position);
+        onCursorPositionChange?.(position);
+      }
+    }
+  }, [getCanvasCoordinates, onCursorPositionChange, state.isAttracting, isDragging]);
+  
+  // Handle mouse/touch end (up)
+  const handlePointerUp = useCallback(() => {
+    setIsDragging(false);
+    onAttractionStateChange?.(false);
+  }, [onAttractionStateChange]);
+  
+  // Setup event listeners
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Always prevent default for touch events to avoid scrolling
+    const preventDefaultTouchstart = (e: TouchEvent) => {
+      e.preventDefault();
+      handlePointerDown(e);
+    };
+    
+    // Mouse events
+    canvas.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+    
+    // Touch events with passive: false to allow preventDefault
+    canvas.addEventListener('touchstart', preventDefaultTouchstart, { passive: false });
+    window.addEventListener('touchmove', handlePointerMove, { passive: false });
+    window.addEventListener('touchend', handlePointerUp);
+    
+    return () => {
+      // Clean up event listeners
+      canvas.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseup', handlePointerUp);
+      
+      canvas.removeEventListener('touchstart', preventDefaultTouchstart);
+      window.removeEventListener('touchmove', handlePointerMove);
+      window.removeEventListener('touchend', handlePointerUp);
+    };
+  }, [handlePointerDown, handlePointerMove, handlePointerUp]);
+  
+  // Initialize WebGL - only once
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    try {
+      // Get WebGL context with optimized parameters
+      const gl = canvas.getContext('webgl', { 
+        antialias: false, // Disable antialiasing for performance
+        alpha: false,
+        depth: false,
+        stencil: false,
+        premultipliedAlpha: false,
+        preserveDrawingBuffer: false,
+        powerPreference: 'high-performance'
+      });
+      
+      if (!gl) {
+        setUseWebGL(false);
+        return;
+      }
+      
+      glRef.current = gl;
+      
+      // Create shader programs
+      const program = createShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
+      if (!program) {
+        setUseWebGL(false);
+        return;
+      }
+      programRef.current = program;
+      
+      // Create trail shader program
+      const trailProgram = createShaderProgram(gl, trailVertexShaderSource, trailFragmentShaderSource);
+      if (!trailProgram) {
+        setUseWebGL(false);
+        return;
+      }
+      trailProgramRef.current = trailProgram;
+      
+      // Create buffers once
+      positionBufferRef.current = gl.createBuffer();
+      velocityBufferRef.current = gl.createBuffer();
+      colorBufferRef.current = gl.createBuffer();
+      
+      // Set clear color
+      gl.clearColor(0.06, 0.07, 0.08, 1.0);
+      
+      // Set blending for alpha transparency
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    } catch (e) {
+      console.error("WebGL initialization error:", e);
+      setUseWebGL(false);
+    }
+    
+    return () => {
+      try {
+        const gl = glRef.current;
+        if (gl) {
+          if (positionBufferRef.current) gl.deleteBuffer(positionBufferRef.current);
+          if (velocityBufferRef.current) gl.deleteBuffer(velocityBufferRef.current);
+          if (colorBufferRef.current) gl.deleteBuffer(colorBufferRef.current);
+          if (programRef.current) gl.deleteProgram(programRef.current);
+          if (trailProgramRef.current) gl.deleteProgram(trailProgramRef.current);
+        }
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    };
+  }, []);
+  
+  // Make sure canvas dimensions match state and prepare projection matrix
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Only update if dimensions changed
+    if (canvas.width !== state.canvasWidth || canvas.height !== state.canvasHeight) {
+      canvas.width = state.canvasWidth;
+      canvas.height = state.canvasHeight;
+      
+      // Update projection matrix with validation
+      const validWidth = state.canvasWidth > 0 ? state.canvasWidth : 1;
+      const validHeight = state.canvasHeight > 0 ? state.canvasHeight : 1;
+      projectionMatrixRef.current = createProjectionMatrix(validWidth, validHeight);
+    }
+  }, [state.canvasWidth, state.canvasHeight]);
+  
+  // Prepare typed arrays for boids data when count changes
+  useEffect(() => {
+    const boidCount = state.boids.length;
+    
+    // Initialize or resize typed arrays if needed
+    if (!positionsArrayRef.current || positionsArrayRef.current.length < boidCount * 2) {
+      positionsArrayRef.current = new Float32Array(boidCount * 2);
+      velocitiesArrayRef.current = new Float32Array(boidCount * 2);
+      colorsArrayRef.current = new Float32Array(boidCount * 4);
+    }
+  }, [state.boids.length]);
+  
+  // Render the boids using either WebGL or Canvas2D
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Make sure projection matrix is initialized
+    if (!projectionMatrixRef.current) {
+      const validWidth = state.canvasWidth > 0 ? state.canvasWidth : 100;
+      const validHeight = state.canvasHeight > 0 ? state.canvasHeight : 100;
+      projectionMatrixRef.current = createProjectionMatrix(validWidth, validHeight);
+    }
+    
+    if (useWebGL && glRef.current && programRef.current && trailProgramRef.current && 
+        positionBufferRef.current && velocityBufferRef.current && colorBufferRef.current && 
+        positionsArrayRef.current && velocitiesArrayRef.current && colorsArrayRef.current && 
+        projectionMatrixRef.current) {
+      try {
+        renderBoidsInstanced(
+          glRef.current,
+          programRef.current,
+          trailProgramRef.current,
+          state,
+          colorPalette,
+          {
+            positionBuffer: positionBufferRef.current,
+            velocityBuffer: velocityBufferRef.current,
+            colorBuffer: colorBufferRef.current,
+            positions: positionsArrayRef.current,
+            velocities: velocitiesArrayRef.current,
+            colors: colorsArrayRef.current,
+            projectionMatrix: projectionMatrixRef.current
+          }
+        );
+      } catch (e) {
+        console.error("WebGL rendering error:", e);
+        setUseWebGL(false); // Switch to Canvas2D renderer
+        renderBoidsCanvas2D(canvas, state, colorPalette);
+      }
+    } else {
+      renderBoidsCanvas2D(canvas, state, colorPalette);
+    }
+    
+    // Draw attraction target if needed
+    if (mousePos && state.isAttracting) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        
+        ctx.beginPath();
+        ctx.arc(mousePos.x, mousePos.y, 8, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+    }
+  }, [state, colorPalette, useWebGL, mousePos]);
+  
+  return (
+    <canvas
+      ref={canvasRef}
+      width={state.canvasWidth}
+      height={state.canvasHeight}
+      className={className}
+      style={{ 
+        margin: 0, 
+        padding: 0, 
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#0f1215',
+        touchAction: 'none'
+      }}
+    />
+  );
+};
+
+// Create a WebGL shader program
+const createShaderProgram = (
+  gl: WebGLRenderingContext,
+  vertexSource: string,
+  fragmentSource: string
+): WebGLProgram | null => {
+  // Create and compile vertex shader
+  const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+  if (!vertexShader) return null;
+  
+  gl.shaderSource(vertexShader, vertexSource);
+  gl.compileShader(vertexShader);
+  
+  if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+    gl.deleteShader(vertexShader);
+    return null;
+  }
+  
+  // Create and compile fragment shader
+  const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+  if (!fragmentShader) return null;
+  
+  gl.shaderSource(fragmentShader, fragmentSource);
+  gl.compileShader(fragmentShader);
+  
+  if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+    return null;
+  }
+  
+  // Create shader program
+  const program = gl.createProgram();
+  if (!program) return null;
+  
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+    gl.deleteProgram(program);
+    return null;
+  }
+  
+  // Cleanup shaders
+  gl.detachShader(program, vertexShader);
+  gl.detachShader(program, fragmentShader);
+  gl.deleteShader(vertexShader);
+  gl.deleteShader(fragmentShader);
+  
+  return program;
+};
+
+// WebGL buffer pointers
+interface WebGLBuffers {
+  positionBuffer: WebGLBuffer;
+  velocityBuffer: WebGLBuffer;
+  colorBuffer: WebGLBuffer;
+  positions: Float32Array;
+  velocities: Float32Array;
+  colors: Float32Array;
+  projectionMatrix: Float32Array;
+}
+
+// Simple, reliable WebGL rendering
+const renderBoidsInstanced = (
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  trailProgram: WebGLProgram,
+  state: BoidsState,
+  colorPalette: string[],
+  buffers: WebGLBuffers
+) => {
+  const { boids, canvasWidth, canvasHeight, particleType, colorizationMode } = state;
+  
+  // Early return if there are no boids or the projection matrix is invalid
+  if (boids.length === 0) return;
+  
+  // Validate and fix projection matrix if necessary
+  if (!isValidMatrix(buffers.projectionMatrix)) {
+    console.error('Invalid projection matrix, recreating');
+    buffers.projectionMatrix = createProjectionMatrix(canvasWidth, canvasHeight);
+    
+    // If still invalid, use identity matrix as fallback
+    if (!isValidMatrix(buffers.projectionMatrix)) {
+      console.error('Failed to create valid projection matrix, using identity matrix');
+      const identity = new Float32Array(16);
+      identity.fill(0);
+      identity[0] = identity[5] = identity[10] = identity[15] = 1;
+      buffers.projectionMatrix = identity;
+    }
+  }
+  
+  // Clear the canvas
+  gl.viewport(0, 0, canvasWidth, canvasHeight);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  
+  // Prepare data for all boids
+  const positions = buffers.positions;
+  const velocities = buffers.velocities;
+  const colors = buffers.colors;
+  
+  // Fill arrays with boid data
+  for (let i = 0; i < boids.length; i++) {
+    const boid = boids[i];
+    const idx = i * 2;
+    const colorIdx = i * 4;
+    
+    // Position data
+    positions[idx] = boid.position.x;
+    positions[idx + 1] = boid.position.y;
+    
+    // Velocity data
+    velocities[idx] = boid.velocity.x;
+    velocities[idx + 1] = boid.velocity.y;
+    
+    // Color data based on selected color mode
+    const color = getBoidColor(boid, i, colorPalette, colorizationMode || 'default', state);
+    const colorValues = parseColor(color);
+    colors[colorIdx] = colorValues[0] / 255;
+    colors[colorIdx + 1] = colorValues[1] / 255;
+    colors[colorIdx + 2] = colorValues[2] / 255;
+    colors[colorIdx + 3] = 0.9; // Alpha
+  }
+  
+  // Draw trails if needed
+  if (particleType === 'trail') {
+    gl.useProgram(trailProgram);
+    
+    const projectionMatrixLocation = gl.getUniformLocation(trailProgram, 'uProjectionMatrix');
+    if (!projectionMatrixLocation) {
+      console.warn('Could not find trail projection matrix uniform location');
+    } else {
+      try {
+        gl.uniformMatrix4fv(projectionMatrixLocation, false, buffers.projectionMatrix);
+      } catch (e) {
+        console.error('Error setting trail projection matrix:', e);
+        return;
+      }
+    }
+    
+    for (let i = 0; i < boids.length; i++) {
+      const boid = boids[i];
+      const { history } = boid;
+      
+      if (history.length < 2) continue;
+      
+      const colorValues = parseColor(getBoidColor(boid, i, colorPalette, colorizationMode || 'default', state));
+      
+      const vertices = new Float32Array(history.length * 2);
+      const trailColors = new Float32Array(history.length * 4);
+      
+      for (let j = 0; j < history.length; j++) {
+        const idx = j * 2;
+        const colorIdx = j * 4;
+        
+        vertices[idx] = history[j].x;
+        vertices[idx + 1] = history[j].y;
+        
+        // Calculate progress from tail to head (reverse it to make head brighter)
+        const progress = (history.length - j - 1) / history.length;
+        
+        // For trails with orientation or speed coloring, calculate the color for each segment
+        if (colorizationMode === 'orientation' || colorizationMode === 'speed') {
+          // Estimate velocity for this history point
+          let dx = 0, dy = 0;
+          
+          // For all points except the last one, estimate velocity from the next point
+          if (j < history.length - 1) {
+            dx = history[j + 1].x - history[j].x;
+            dy = history[j + 1].y - history[j].y;
+          } 
+          // For the last point (head), use the boid's current velocity
+          else {
+            dx = boid.velocity.x;
+            dy = boid.velocity.y;
+          }
+          
+          // Create temporary boid with this history point
+          const historyBoid = {
+            id: boid.id,
+            position: history[j],
+            velocity: { x: dx, y: dy }
+          };
+          
+          // Get the appropriate color based on this point's data
+          const segmentColorValues = parseColor(
+            getBoidColor(historyBoid, i, colorPalette, colorizationMode, state)
+          );
+          
+          trailColors[colorIdx] = segmentColorValues[0] / 255;
+          trailColors[colorIdx + 1] = segmentColorValues[1] / 255;
+          trailColors[colorIdx + 2] = segmentColorValues[2] / 255;
+          trailColors[colorIdx + 3] = progress * 0.7; // Alpha decreases for older points
+        } else {
+          // For other coloring modes, use the boid's color with fading opacity
+          trailColors[colorIdx] = colorValues[0] / 255;
+          trailColors[colorIdx + 1] = colorValues[1] / 255;
+          trailColors[colorIdx + 2] = colorValues[2] / 255;
+          trailColors[colorIdx + 3] = progress * 0.7; // Alpha decreases for older points
+        }
+      }
+      
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffers.positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STREAM_DRAW);
+      
+      const positionLocation = gl.getAttribLocation(trailProgram, 'aPosition');
+      gl.enableVertexAttribArray(positionLocation);
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+      
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffers.colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, trailColors, gl.STREAM_DRAW);
+      
+      const colorLocation = gl.getAttribLocation(trailProgram, 'aColor');
+      gl.enableVertexAttribArray(colorLocation);
+      gl.vertexAttribPointer(colorLocation, 4, gl.FLOAT, false, 0, 0);
+      
+      gl.drawArrays(gl.LINE_STRIP, 0, history.length);
+    }
+  }
+
+  // Draw boids as points
+  gl.useProgram(program);
+  
+  const projectionMatrixLocation = gl.getUniformLocation(program, 'uProjectionMatrix');
+  if (!projectionMatrixLocation) {
+    console.warn('Could not find projection matrix uniform location');
+    return;
+  }
+  
+  try {
+    gl.uniformMatrix4fv(projectionMatrixLocation, false, buffers.projectionMatrix);
+  } catch (e) {
+    console.error('Error setting projection matrix:', e);
+    // Fall back to 2D canvas rendering as a last resort
+    renderBoidsCanvas2D(gl.canvas as HTMLCanvasElement, state, colorPalette);
+    return;
+  }
+  
+  // Position attribute
+  const positionAttributeLocation = gl.getAttribLocation(program, 'aPosition');
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.positionBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(positionAttributeLocation);
+  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+  
+  // Velocity attribute
+  const velocityAttributeLocation = gl.getAttribLocation(program, 'aVelocity');
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.velocityBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, velocities, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(velocityAttributeLocation);
+  gl.vertexAttribPointer(velocityAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+  
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.colorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STREAM_DRAW);
+  
+  const colorLocation = gl.getAttribLocation(program, 'aColor');
+  gl.enableVertexAttribArray(colorLocation);
+  gl.vertexAttribPointer(colorLocation, 4, gl.FLOAT, false, 0, 0);
+  
+  let pointSize = 10;
+  switch (particleType) {
+    case 'disk': pointSize = 10; break;
+    case 'dot': pointSize = 4; break;
+    case 'trail': pointSize = 6; break;
+  }
+  
+  const pointSizeLocation = gl.getUniformLocation(program, 'uPointSize');
+  if (pointSizeLocation) {
+    gl.uniform1f(pointSizeLocation, pointSize);
+  }
+  
+  gl.drawArrays(gl.POINTS, 0, boids.length);
+  
+  gl.disableVertexAttribArray(positionAttributeLocation);
+  gl.disableVertexAttribArray(velocityAttributeLocation);
+  gl.disableVertexAttribArray(colorLocation);
+};
+
+// Fallback Canvas2D rendering when WebGL is not available
+const renderBoidsCanvas2D = (
+  canvas: HTMLCanvasElement,
+  state: BoidsState,
+  colorPalette: string[]
+) => {
+  const { boids, canvasWidth, canvasHeight, particleType, colorizationMode } = state;
+  const ctx = canvas.getContext('2d');
+  
+  if (!ctx) return;
+  
+  // Clear the canvas
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  
+  // Draw each boid
+  for (let i = 0; i < boids.length; i++) {
+    const boid = boids[i];
+    const color = getBoidColor(boid, i, colorPalette, colorizationMode || 'default', state);
+    
+    ctx.save();
+    
+    // Draw trails if enabled
+    if (particleType === 'trail' && boid.history.length > 1) {
+      // For trails, we want to draw line segments with gradient opacity
+      // Each segment can have its own color based on its velocity at that point
+      for (let j = 0; j < boid.history.length - 1; j++) {
+        const startPoint = boid.history[j];
+        const endPoint = boid.history[j + 1];
+        
+        // Calculate the progress from tail to head (newer points have higher opacity)
+        // Reverse the progress to make head brighter and tail faded
+        const progress = (boid.history.length - j - 1) / boid.history.length;
+        
+        // Get color for this history point if we're using orientation or speed colorization
+        let segmentColor = color;
+        if (colorizationMode === 'orientation' || colorizationMode === 'speed') {
+          // For history points, we don't have velocity stored
+          // So we can estimate it from the position difference
+          const dx = endPoint.x - startPoint.x;
+          const dy = endPoint.y - startPoint.y;
+          
+          // Create a temporary boid object with position and velocity
+          const historyBoid = {
+            id: boid.id,
+            position: startPoint,
+            velocity: { x: dx, y: dy }
+          };
+          
+          segmentColor = getBoidColor(historyBoid, i, colorPalette, colorizationMode, state);
+        }
+        
+        // Draw the line segment with transparency based on position in history
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineTo(endPoint.x, endPoint.y);
+        
+        // Convert color to rgba with proper opacity
+        // Parse the color (whether it's RGB or HSL) and convert to RGBA
+        const rgbValues = parseColor(segmentColor);
+        ctx.strokeStyle = `rgba(${rgbValues[0]}, ${rgbValues[1]}, ${rgbValues[2]}, ${progress * 0.8})`;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+    } else {
+      // Draw the boid
+      ctx.fillStyle = color;
+      
+      // Position at the boid's current position
+      ctx.translate(boid.position.x, boid.position.y);
+      
+      // Draw a circle for disk and dot types
+      const radius = particleType === 'dot' ? 2 : 
+                    (particleType === 'trail' ? 3 : 5);
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
+  }
+};
+
+// Generate a palette of colors based on a primary color
+const generateColorPalette = (baseColor: string, count: number): string[] => {
+  const palette: string[] = [];
+  
+  // Parse the base color
+  const r = parseInt(baseColor.slice(1, 3), 16);
+  const g = parseInt(baseColor.slice(3, 5), 16);
+  const b = parseInt(baseColor.slice(5, 7), 16);
+  
+  for (let i = 0; i < count; i++) {
+    // Vary the hue slightly for each color
+    const hueShift = (i * 20) % 360;
+    const [h, s, l] = rgbToHsl(r, g, b);
+    const [newR, newG, newB] = hslToRgb((h + hueShift) % 360, s, l);
+    
+    palette.push(`rgb(${newR}, ${newG}, ${newB})`);
+  }
+  
+  return palette;
+};
+
+// Get a color based on colorization mode
+const getBoidColor = (
+  boid: any, 
+  index: number, 
+  colorPalette: string[], 
+  colorizationMode: string,
+  state: BoidsState
+): string => {
+  switch (colorizationMode) {
+    case 'speed': {
+      // Color based on speed (magnitude of velocity)
+      const speed = Math.sqrt(boid.velocity.x * boid.velocity.x + boid.velocity.y * boid.velocity.y);
+      
+      // Use the state's maxSpeed parameter but scale it to create a better distribution
+      const maxSpeed = state.parameters.maxSpeed;
+      
+      // Most boids operate in the 25-85% of max speed range
+      // We'll scale our colors to emphasize this range
+      const minEffectiveSpeed = 0.1 * maxSpeed;  // Slow threshold (10% of max)
+      const maxEffectiveSpeed = 0.9 * maxSpeed;  // Fast threshold (90% of max)
+      
+      // Normalize to our effective range
+      let adjustedSpeed = (speed - minEffectiveSpeed) / (maxEffectiveSpeed - minEffectiveSpeed);
+      // Clamp to 0-1 range
+      adjustedSpeed = Math.max(0, Math.min(1, adjustedSpeed));
+      
+      // Use a tri-color scale: blue (cold) -> teal -> green -> yellow -> red (hot)
+      // Map 0-1 to 240-0 (blue to red) with extra emphasis on the middle range
+      let hue;
+      if (adjustedSpeed < 0.33) {
+        // Blue (240) to teal/green (180)
+        hue = 240 - (adjustedSpeed * 3) * 60;
+      } else if (adjustedSpeed < 0.66) {
+        // Teal/green (180) to yellow (60)
+        hue = 180 - ((adjustedSpeed - 0.33) * 3) * 120;
+      } else {
+        // Yellow (60) to red (0)
+        hue = 60 - ((adjustedSpeed - 0.66) * 3) * 60;
+      }
+      
+      // Boost saturation and lightness for better visibility of the coloring
+      return `hsl(${Math.round(hue)}, 90%, 60%)`;
+    }
+    case 'orientation': {
+      // Color based on direction angle of velocity vector
+      const angle = Math.atan2(boid.velocity.y, boid.velocity.x);
+      
+      // Convert to degrees and normalize to 0-360 range
+      // Add 180° to shift from [-180,180] to [0,360]
+      let degrees = (angle * 180 / Math.PI) + 180;
+      
+      // Use the HSL color wheel directly:
+      // 0° = Red, 60° = Yellow, 120° = Green, 180° = Cyan, 240° = Blue, 300° = Magenta
+      
+      // Create more vibrant colors with high saturation and balanced brightness
+      return `hsl(${Math.round(degrees)}, 100%, 65%)`;
+    }
+    case 'random': {
+      // Consistent random color based on boid ID
+      return `hsl(${(boid.id * 137.5) % 360}, 80%, 60%)`;
+    }
+    case 'neighbors': {
+      // Count neighbors using a simulated perception radius check
+      const perceptionRadius = state.parameters.perceptionRadius;
+      const perceptionRadiusSq = perceptionRadius * perceptionRadius;
+      
+      // Count neighbors in radius
+      let neighborCount = 0;
+      
+      // Sample all boids for a more accurate count
+      // Use spatial optimization if available
+      if (state.spatialGrid) {
+        // Get neighboring cells for this boid
+        const gridCellSize = state.gridCellSize;
+        const cellX = Math.floor(boid.position.x / gridCellSize);
+        const cellY = Math.floor(boid.position.y / gridCellSize);
+        
+        // Check surrounding cells (9 cells total for current and adjacent)
+        for (let i = -1; i <= 1; i++) {
+          for (let j = -1; j <= 1; j++) {
+            const cellKey = `${cellX + i},${cellY + j}`;
+            const cellBoids = state.spatialGrid.get(cellKey);
+            
+            if (cellBoids) {
+              // Count boids in this cell that are within perception radius
+              for (const otherIdx of cellBoids) {
+                const otherBoid = state.boids[otherIdx];
+                if (otherBoid.id !== boid.id) {
+                  const dx = boid.position.x - otherBoid.position.x;
+                  const dy = boid.position.y - otherBoid.position.y;
+                  const distSq = dx * dx + dy * dy;
+                  
+                  if (distSq < perceptionRadiusSq) {
+                    neighborCount++;
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Fallback to checking a limited number of boids
+        const maxCheck = Math.min(state.boids.length, 100);
+        for (let i = 0; i < maxCheck; i++) {
+          const otherBoid = state.boids[i];
+          if (otherBoid.id !== boid.id) {
+            const dx = boid.position.x - otherBoid.position.x;
+            const dy = boid.position.y - otherBoid.position.y;
+            const distSq = dx * dx + dy * dy;
+            
+            if (distSq < perceptionRadiusSq) {
+              neighborCount++;
+            }
+          }
+        }
+      }
+      
+      // Adjust thresholds based on observed neighbor counts
+      // Use a higher max to get a broader distribution
+      const maxNeighbors = 24;  // Increase threshold for better distribution
+      
+      // Linear mapping - no square root to avoid skewing toward higher values
+      const normalizedCount = Math.min(1, neighborCount / maxNeighbors);
+      
+      // Use a rainbow gradient with more blues and greens
+      let hue;
+      if (normalizedCount <= 0.4) {
+        // More room for blues (0-40% of range)
+        // Map 0-0.4 to 240-180 (blue to cyan)
+        hue = 240 - (normalizedCount / 0.4) * 60;
+      } else if (normalizedCount <= 0.7) {
+        // More room for greens (40-70% of range)
+        // Map 0.4-0.7 to 180-90 (cyan to yellow-green)
+        hue = 180 - ((normalizedCount - 0.4) / 0.3) * 90;
+      } else {
+        // Less room for reds (70-100% of range)
+        // Map 0.7-1.0 to 90-0 (yellow-green to red)
+        hue = 90 - ((normalizedCount - 0.7) / 0.3) * 90;
+      }
+      
+      // Use high saturation and brightness for vibrant colors
+      return `hsl(${Math.round(hue)}, 90%, 60%)`;
+    }
+    default:
+      // Default color from palette
+      return colorPalette[index % colorPalette.length];
+  }
+};
+
+// Parse a color string to RGB array
+const parseColor = (color: string): number[] => {
+  // Handle hsl colors
+  if (color.startsWith('hsl')) {
+    const match = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+    if (match) {
+      const [h, s, l] = [parseInt(match[1]), parseInt(match[2]) / 100, parseInt(match[3]) / 100];
+      const [r, g, b] = hslToRgb(h, s, l);
+      return [r, g, b];
+    }
+  }
+  
+  // Handle rgb colors
+  const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (match) {
+    return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+  }
+  
+  return [65, 105, 225]; // Default blue
+};
+
+// Convert RGB to HSL
+const rgbToHsl = (r: number, g: number, b: number): [number, number, number] => {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    
+    h *= 60;
+  }
+  
+  return [h, s, l];
+};
+
+// Convert HSL to RGB
+const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+  let r, g, b;
+  
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    
+    r = hue2rgb(p, q, (h / 360) + 1/3);
+    g = hue2rgb(p, q, h / 360);
+    b = hue2rgb(p, q, (h / 360) - 1/3);
+  }
+  
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}; 
+
+
+================================================
+FILE: src/components/boids/BoidsSimulation.tsx
+================================================
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { BoidsCanvas } from './BoidsCanvas';
+import { BoidsControls } from '../controls/BoidsControls';
+import { createInitialState, updateBoids, BoidsState, BoidsParameters, ParticleType } from '../../utils/boids';
+
+export const BoidsSimulation = () => {
+  // Use full screen dimensions for canvas
+  const canvasWidth = window.innerWidth;
+  const canvasHeight = window.innerHeight;
+  
+  // Use a single state object for both parameters and state
+  const [state, setState] = useState<BoidsState>(() => {
+    // Create initial state with more boids and optimized parameters
+    const initialState = createInitialState(2000, canvasWidth, canvasHeight);
+    
+    // Set optimized parameters for better performance
+    initialState.parameters.attractionForce = 2.0;
+    initialState.parameters.maxSpeed = 2.5;
+    initialState.parameters.perceptionRadius = 30; // Smaller perception radius for better performance
+    initialState.parameters.separationForce = 1.5;
+    initialState.gridCellSize = initialState.parameters.perceptionRadius;
+    initialState.particleType = 'trail'; // Start with simple disks for better performance
+    
+    return initialState;
+  });
+
+  // State for controls panel collapsed state
+  const [isControlsCollapsed, setIsControlsCollapsed] = useState(false);
+
+  // Use refs for values that need to be accessed in animation loop
+  const stateRef = useRef(state);
+  const attractingRef = useRef(false);
+  const cursorPositionRef = useRef<{ x: number, y: number } | null>(null);
+  
+  // Animation frame tracking
+  const animationFrameRef = useRef<number | null>(null);
+  const lastFrameTimeRef = useRef<number>(0);
+  const targetFPS = 60;
+  const frameInterval = 1000 / targetFPS;
+  
+  // Performance tracking
+  const fpsCounterRef = useRef<number>(0);
+  const lastFpsUpdateRef = useRef<number>(0);
+  const currentFpsRef = useRef<number>(0);
+  
+  // Update the ref whenever state changes
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // Handle parameter change
+  const handleParameterChange = useCallback((params: Partial<BoidsParameters>) => {
+    setState(prev => ({
+      ...prev,
+      parameters: {
+        ...prev.parameters,
+        ...params
+      }
+    }));
+  }, []);
+
+  // Handle cursor position updates - update ref directly for animation loop
+  const handleCursorPositionChange = useCallback((position: { x: number; y: number } | null) => {
+    // Update ref immediately for animation loop
+    cursorPositionRef.current = position;
+  }, []);
+
+  // Handle attraction state changes - update ref directly for animation loop
+  const handleAttractionStateChange = useCallback((isAttracting: boolean) => {
+    // Update ref immediately for animation loop
+    attractingRef.current = isAttracting;
+    
+    // Update state for UI
+    setState(prev => ({
+      ...prev,
+      isAttracting
+    }));
+  }, []);
+
+  // Handle particle type change
+  const handleParticleTypeChange = useCallback((type: ParticleType) => {
+    setState(prev => ({
+      ...prev,
+      particleType: type
+    }));
+  }, []);
+
+  // Toggle running state
+  const handleToggleRunning = useCallback(() => {
+    setState(prev => {
+      const newIsRunning = !prev.isRunning;
+      return {
+        ...prev,
+        isRunning: newIsRunning
+      };
+    });
+  }, []);
+
+  // Toggle controls panel collapsed state
+  const handleToggleControlsCollapsed = useCallback(() => {
+    setIsControlsCollapsed(prev => !prev);
+  }, []);
+
+  // Handle colorization mode change
+  const handleColorizationChange = useCallback((mode: string) => {
+    setState(prev => ({
+      ...prev,
+      colorizationMode: mode
+    }));
+  }, []);
+
+  // Reset simulation
+  const handleReset = useCallback((count?: number) => {
+    setState(() => {
+      const newState = createInitialState(
+        count || state.boids.length,
+        state.canvasWidth,
+        state.canvasHeight
+      );
+      // Preserve attraction force on reset
+      newState.parameters.attractionForce = state.parameters.attractionForce;
+      return newState;
+    });
+  }, [state.boids.length, state.canvasWidth, state.canvasHeight, state.parameters.attractionForce]);
+
+  // Add a direct method to update population without resetting other attributes
+  const handlePopulationChange = useCallback((count: number) => {
+    setState(prev => {
+      // Create new boids array with desired count
+      const newBoids = [...prev.boids];
+      
+      // If we need more boids
+      if (count > newBoids.length) {
+        // Get existing ids to avoid duplicates
+        const existingIds = new Set(newBoids.map(b => b.id));
+        let nextId = prev.boids.length > 0 ? Math.max(...prev.boids.map(b => b.id)) + 1 : 0;
+        
+        // Create additional boids
+        const additionalCount = count - newBoids.length;
+        const canvasWidth = prev.canvasWidth;
+        const canvasHeight = prev.canvasHeight;
+        
+        for (let i = 0; i < additionalCount; i++) {
+          // Find next available id
+          while (existingIds.has(nextId)) {
+            nextId++;
+          }
+          
+          // Add a new boid with random position and velocity
+          newBoids.push({
+            id: nextId,
+            position: {
+              x: Math.random() * canvasWidth,
+              y: Math.random() * canvasHeight
+            },
+            velocity: {
+              x: (Math.random() * 2 - 1) * prev.parameters.maxSpeed,
+              y: (Math.random() * 2 - 1) * prev.parameters.maxSpeed
+            },
+            acceleration: { x: 0, y: 0 },
+            history: [],
+            maxHistoryLength: prev.parameters.trailLength,
+            // The gridCell will be calculated in the next update
+            gridCell: undefined
+          });
+          
+          existingIds.add(nextId);
+          nextId++;
+        }
+      }
+      // If we need fewer boids
+      else if (count < newBoids.length) {
+        // Remove boids from the end
+        newBoids.splice(count);
+      }
+      
+      // Return updated state with new boid count but preserve other settings
+      return {
+        ...prev,
+        boids: newBoids
+      };
+    });
+  }, []);
+
+  // Update canvas dimensions on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setState(prev => ({
+        ...prev,
+        canvasWidth: window.innerWidth,
+        canvasHeight: window.innerHeight
+      }));
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Advanced animation loop with optimized updates
+  useEffect(() => {
+    if (!state.isRunning) {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      return;
+    }
+
+    // Three phases: 
+    // 1. Only update subset of boids each frame for large counts
+    // 2. Batch update to reduce React state changes
+    // 3. Skip frames if performance drops
+    
+    let updateCounter = 0;
+    let stateUpdated = false;
+    let previousState = stateRef.current;
+    let skippedFrames = 0;
+    const maxSkipFrames = 2;
+    
+    // Animation function with direct ref access
+    const animate = (timestamp: number) => {
+      // Track FPS
+      fpsCounterRef.current++;
+      if (timestamp - lastFpsUpdateRef.current >= 1000) {
+        currentFpsRef.current = fpsCounterRef.current;
+        fpsCounterRef.current = 0;
+        lastFpsUpdateRef.current = timestamp;
+        
+        // Adjust simulation complexity based on FPS
+        if (currentFpsRef.current < 30 && skippedFrames < maxSkipFrames) {
+          skippedFrames++;
+        } else if (currentFpsRef.current > 45 && skippedFrames > 0) {
+          skippedFrames--;
+        }
+      }
+      
+      // Performance optimization: skip frames if needed 
+      updateCounter++;
+      if (updateCounter % (skippedFrames + 1) !== 0) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      
+      // Limit updates to target FPS
+      if (timestamp - lastFrameTimeRef.current >= frameInterval) {
+        lastFrameTimeRef.current = timestamp - ((timestamp - lastFrameTimeRef.current) % frameInterval);
+        
+        // Use the current state from ref, but update with the latest cursor and attraction values
+        if (!stateUpdated) {
+          const nextState = updateBoids({
+            ...stateRef.current,
+            isAttracting: attractingRef.current,
+            cursorPosition: cursorPositionRef.current
+          });
+          
+          // Only trigger React update if state has really changed
+          if (nextState !== previousState) {
+            setState(nextState);
+            previousState = nextState;
+            stateUpdated = true;
+          }
+        } else {
+          // Reset stateUpdated for next time
+          stateUpdated = false;
+        }
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    // Start animation if not running
+    if (animationFrameRef.current === null) {
+      lastFrameTimeRef.current = performance.now();
+      lastFpsUpdateRef.current = performance.now();
+      fpsCounterRef.current = 0;
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
+
+    // Cleanup
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [state.isRunning, frameInterval]);
+
+  return (
+    <div style={{ margin: 0, padding: 0, overflow: 'hidden', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh' }}>
+      {/* Full-screen canvas */}
+      <BoidsCanvas 
+        state={state}
+        className="w-full h-full" 
+        onCursorPositionChange={handleCursorPositionChange}
+        onAttractionStateChange={handleAttractionStateChange}
+      />
+      
+      {/* Controls panel in top right corner */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          zIndex: 1000,
+        }}
+      >
+        <BoidsControls
+          state={state}
+          onParameterChange={handleParameterChange}
+          onParticleTypeChange={handleParticleTypeChange}
+          onToggleRunning={handleToggleRunning}
+          onReset={handleReset}
+          isCollapsed={isControlsCollapsed}
+          onToggleCollapsed={handleToggleControlsCollapsed}
+          onPopulationChange={handlePopulationChange}
+          onColorizationChange={handleColorizationChange}
+        />
+      </div>
+      
+      {/* FPS Counter */}
+      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 1000, color: 'white', fontSize: '12px', backgroundColor: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>
+        FPS: {currentFpsRef.current} | Boids: {state.boids.length}
+      </div>
+      
+      {/* Attraction Indicator */}
+      {state.isAttracting && (
+        <div style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 1000, color: 'white', fontSize: '12px', backgroundColor: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>
+          Attracting: ON
+        </div>
+      )}
+    </div>
+  );
+}; 
+
+
+================================================
+FILE: src/components/controls/BoidsControls.tsx
+================================================
+import { useState, useEffect } from 'react';
+import {
+  Box,
+  Card,
+  IconButton,
+  Typography,
+  Slider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  Tooltip,
+  alpha,
+} from '@mui/material';
+import PauseIcon from '@mui/icons-material/Pause';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import SettingsIcon from '@mui/icons-material/Settings';
+import InfoIcon from '@mui/icons-material/Info';
+import { BoidsParameters, BoidsState, ParticleType } from '../../utils/boids';
+import React from 'react';
+
+interface BoidsControlsProps {
+  state: BoidsState;
+  onParameterChange: (params: Partial<BoidsParameters>) => void;
+  onParticleTypeChange: (type: ParticleType) => void;
+  onToggleRunning: () => void;
+  onReset: (count?: number) => void;
+  isCollapsed?: boolean;
+  onToggleCollapsed?: () => void;
+  onPopulationChange?: (count: number) => void;
+  onColorizationChange?: (mode: string) => void;
+}
+
+// Compact slider with label and value
+const CompactSlider = ({ 
+  label, 
+  value, 
+  min, 
+  max, 
+  step,
+  onChange,
+  tooltip
+}: { 
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (event: Event, value: number | number[]) => void;
+  tooltip: string;
+}) => {
+  return (
+    <Box sx={{ mb: 1.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>
+            {label}
+          </Typography>
+          <Tooltip title={tooltip} arrow placement="top">
+            <InfoIcon sx={{ ml: 0.5, fontSize: '0.75rem', color: 'primary.main', opacity: 0.7 }} />
+          </Tooltip>
+        </Box>
+        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+          {value}
+        </Typography>
+      </Box>
+      <Slider
+        size="small"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={onChange}
+        sx={{
+          color: 'primary.main',
+          height: 4,
+          '& .MuiSlider-thumb': {
+            width: 12,
+            height: 12,
+          }
+        }}
+      />
+    </Box>
+  );
+};
+
+export const BoidsControls = ({
+  state,
+  onParameterChange,
+  onParticleTypeChange,
+  onToggleRunning,
+  onReset,
+  isCollapsed = false,
+  onToggleCollapsed,
+  onPopulationChange,
+  onColorizationChange,
+}: BoidsControlsProps) => {
+  const [boidsCount, setBoidsCount] = useState<number>(state.boids.length);
+  
+  // Update local count when boids count changes externally
+  useEffect(() => {
+    setBoidsCount(state.boids.length);
+  }, [state.boids.length]);
+
+  const handleSliderChange = (name: keyof BoidsParameters) => (
+    _event: Event,
+    value: number | number[]
+  ) => {
+    onParameterChange({ [name]: value as number });
+  };
+
+  const handleParticleTypeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    onParticleTypeChange(event.target.value as ParticleType);
+  };
+
+  const handleReset = () => {
+    onReset(boidsCount);
+  };
+
+  const handleBoidsCountChange = (_event: Event, value: number | number[]) => {
+    const newCount = value as number;
+    setBoidsCount(newCount);
+    
+    // Update population immediately if handler provided
+    if (onPopulationChange) {
+      onPopulationChange(newCount);
+    }
+  };
+
+  const handleColorizationChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    if (onColorizationChange) {
+      onColorizationChange(event.target.value as string);
+    }
+  };
+
+  return (
+    <div>
+      {/* Gear button for collapsed state */}
+      {isCollapsed && (
+        <IconButton 
+          size="small" 
+          onClick={onToggleCollapsed}
+          sx={{ 
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            backdropFilter: 'blur(5px)',
+            color: 'rgba(255,255,255,0.9)',
+            border: '1px solid rgba(100, 100, 150, 0.15)',
+            width: 38,
+            height: 38,
+            '&:hover': {
+              backgroundColor: 'rgba(30, 30, 50, 0.4)',
+            }
+          }}
+        >
+          <SettingsIcon fontSize="small" />
+        </IconButton>
+      )}
+      
+      {/* Full controls panel */}
+      {!isCollapsed && (
+        <Card 
+          elevation={3}
+          sx={{
+            width: 240,
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            backdropFilter: 'blur(10px)',
+            color: 'black',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            transition: 'all 0.3s ease-in-out',
+            border: '1px solid',
+            borderColor: 'rgba(100, 100, 150, 0.15)'
+          }}
+        >
+          {/* Header bar with collapse toggle */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              p: 1,
+              backgroundColor: 'rgba(14, 14, 21, 0.3)',
+              borderBottom: '1px solid rgba(100, 100, 150, 0.15)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton 
+                size="small" 
+                sx={{ mr: 1, color: 'rgba(255,255,255,0.9)' }}
+                onClick={onToggleCollapsed}
+              >
+                <SettingsIcon fontSize="small" />
+              </IconButton>
+              <Typography variant="subtitle2" sx={{ fontWeight: 500, color: 'rgba(255,255,255,0.95)' }}>
+                Boids Controls
+              </Typography>
+            </Box>
+            
+            <IconButton
+              size="small"
+              color={state.isRunning ? "error" : "success"}
+              onClick={onToggleRunning}
+              sx={{ 
+                backgroundColor: alpha(state.isRunning ? '#f44336' : '#4caf50', 0.1),
+                width: 28,
+                height: 28
+              }}
+            >
+              {state.isRunning ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
+            </IconButton>
+          </Box>
+
+          {/* All controls */}
+          <Box sx={{ p: 1.5 }}>
+            {/* Type and Edge selectors */}
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              {/* Type selector */}
+              <FormControl size="small" fullWidth variant="outlined" sx={{ 
+                '.MuiOutlinedInput-notchedOutline': { 
+                  borderColor: 'rgba(100, 100, 150, 0.3)' 
+                }
+              }}>
+                <InputLabel id="type-select-label" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>Type</InputLabel>
+                <Select
+                  labelId="type-select-label"
+                  value={state.particleType}
+                  onChange={handleParticleTypeChange as any}
+                  label="Type"
+                  sx={{ 
+                    color: 'white', 
+                    fontSize: '0.75rem',
+                    '.MuiSelect-select': { 
+                      py: 0.75 
+                    }
+                  }}
+                >
+                  <MenuItem value="disk">Disk</MenuItem>
+                  <MenuItem value="dot">Dot</MenuItem>
+                  <MenuItem value="trail">Trail</MenuItem>
+                </Select>
+              </FormControl>
+              
+              {/* Edge behavior selector */}
+              <FormControl size="small" fullWidth variant="outlined" sx={{ 
+                '.MuiOutlinedInput-notchedOutline': { 
+                  borderColor: 'rgba(100, 100, 150, 0.3)' 
+                }
+              }}>
+                <InputLabel id="edge-select-label" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>Edge</InputLabel>
+                <Select
+                  labelId="edge-select-label"
+                  value={state.parameters.edgeBehavior}
+                  onChange={(e) => onParameterChange({ edgeBehavior: e.target.value as any })}
+                  label="Edge"
+                  sx={{ 
+                    color: 'white', 
+                    fontSize: '0.75rem',
+                    '.MuiSelect-select': { 
+                      py: 0.75 
+                    }
+                  }}
+                >
+                  <MenuItem value="wrap">Wrap</MenuItem>
+                  <MenuItem value="bounce">Bounce</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+              
+            {/* Colorization selector */}
+            <FormControl size="small" fullWidth variant="outlined" sx={{ 
+              '.MuiOutlinedInput-notchedOutline': { 
+                borderColor: 'rgba(100, 100, 150, 0.3)' 
+              },
+              mb: 2
+            }}>
+              <InputLabel id="color-select-label" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>Colorize</InputLabel>
+              <Select
+                labelId="color-select-label"
+                value={state.colorizationMode || 'default'}
+                onChange={handleColorizationChange as any}
+                label="Colorize"
+                sx={{ 
+                  color: 'white', 
+                  fontSize: '0.75rem',
+                  '.MuiSelect-select': { 
+                    py: 0.75 
+                  }
+                }}
+              >
+                <MenuItem value="default">Default</MenuItem>
+                <MenuItem value="speed">Speed</MenuItem>
+                <MenuItem value="orientation">Orientation</MenuItem>
+                <MenuItem value="random">Random</MenuItem>
+                <MenuItem value="neighbors">Neighbors</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Behavior Sliders */}
+            <CompactSlider
+              label="Alignment"
+              value={state.parameters.alignmentForce}
+              min={0}
+              max={2}
+              step={0.1}
+              onChange={handleSliderChange('alignmentForce')}
+              tooltip="How strongly boids align with neighbors"
+            />
+            
+            <CompactSlider
+              label="Cohesion"
+              value={state.parameters.cohesionForce}
+              min={0}
+              max={2}
+              step={0.1}
+              onChange={handleSliderChange('cohesionForce')}
+              tooltip="How strongly boids are attracted to the flock center"
+            />
+            
+            <CompactSlider
+              label="Separation"
+              value={state.parameters.separationForce}
+              min={0}
+              max={3}
+              step={0.1}
+              onChange={handleSliderChange('separationForce')}
+              tooltip="How strongly boids avoid each other"
+            />
+            
+            <CompactSlider
+              label="Perception"
+              value={state.parameters.perceptionRadius}
+              min={10}
+              max={200}
+              step={5}
+              onChange={handleSliderChange('perceptionRadius')}
+              tooltip="How far boids can see"
+            />
+            
+            <CompactSlider
+              label="Max Speed"
+              value={state.parameters.maxSpeed}
+              min={1}
+              max={10}
+              step={0.5}
+              onChange={handleSliderChange('maxSpeed')}
+              tooltip="Maximum velocity of boids"
+            />
+            
+            <CompactSlider
+              label="Attraction"
+              value={state.parameters.attractionForce}
+              min={0}
+              max={5}
+              step={0.5}
+              onChange={handleSliderChange('attractionForce')}
+              tooltip="Strength of attraction to cursor"
+            />
+            
+            {state.particleType === 'trail' && (
+              <CompactSlider
+                label="Trail Length"
+                value={state.parameters.trailLength}
+                min={2}
+                max={30}
+                step={1}
+                onChange={handleSliderChange('trailLength')}
+                tooltip="Length of history trail"
+              />
+            )}
+            
+            <CompactSlider
+              label="Population"
+              value={boidsCount}
+              min={10}
+              max={4000}
+              step={10}
+              onChange={handleBoidsCountChange}
+              tooltip="Number of boids to simulate"
+            />
+            
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                color="secondary"
+                startIcon={<RestartAltIcon />}
+                onClick={handleReset}
+                sx={{ 
+                  fontSize: '0.75rem', 
+                  py: 0.5,
+                  textTransform: 'none'
+                }}
+              >
+                Reset
+              </Button>
+            </Box>
+          </Box>
+        </Card>
+      )}
+    </div>
+  );
+}; 
+
+
+================================================
+FILE: src/hooks/useBoids.ts
+================================================
+/**
+ * This hook has been deprecated.
+ * All boids simulation logic is now directly implemented in BoidsSimulation.tsx
+ * for optimal performance with WebGL rendering.
+ */
+
+import { BoidsState } from '../utils/boids';
+
+// This is a placeholder implementation to prevent import errors
+export const useBoids = () => {
+  console.warn('useBoids hook is deprecated. Use BoidsSimulation component directly.');
+  
+  // Return minimal placeholders to avoid errors
+  return {
+    state: {} as BoidsState,
+    setParameters: () => {},
+    setParticleType: () => {},
+    toggleRunning: () => {},
+    togglePerceptionRadius: () => {},
+    resetBoids: () => {},
+    setFps: () => {},
+    getCurrentFps: () => 0,
+    setBoidsCount: () => {}
+  };
+};
+
+// This empty file is kept to avoid breaking imports
+// The functionality has been merged into BoidsSimulation.tsx and BoidsCanvas.tsx 
+
+
+================================================
+FILE: src/utils/boids.ts
+================================================
+/**
+ * Boids flocking algorithm implementation
+ * Based on the original algorithm by Craig Reynolds: https://www.red3d.com/cwr/boids/
+ * Optimized with spatial partitioning for better performance
+ */
+
+export interface Vector2D {
+  x: number;
+  y: number;
+}
+
+export interface Boid {
+  id: number;
+  position: Vector2D;
+  velocity: Vector2D;
+  acceleration: Vector2D;
+  history: Vector2D[];
+  maxHistoryLength: number;
+  gridCell?: string; // For spatial partitioning
+}
+
+export interface BoidsParameters {
+  alignmentForce: number;
+  cohesionForce: number;
+  separationForce: number;
+  perceptionRadius: number;
+  maxSpeed: number;
+  maxForce: number;
+  edgeBehavior: 'wrap' | 'bounce';
+  edgeMargin: number;
+  trailLength: number;
+  attractionForce: number;
+}
+
+export type ParticleType = 'disk' | 'trail' | 'arrow' | 'dot';
+
+export interface BoidsState {
+  boids: Boid[];
+  parameters: BoidsParameters;
+  canvasWidth: number;
+  canvasHeight: number;
+  particleType: ParticleType;
+  isRunning: boolean;
+  showPerceptionRadius: boolean;
+  spatialGrid: Map<string, number[]>; // Spatial partitioning grid: cell key -> array of boid indices
+  gridCellSize: number;
+  cursorPosition: Vector2D | null;
+  isAttracting: boolean;
+  colorizationMode: string;
+}
+
+export const DEFAULT_PARAMETERS: BoidsParameters = {
+  alignmentForce: 1.0,
+  cohesionForce: 1.0,
+  separationForce: 1.5,
+  perceptionRadius: 50,
+  maxSpeed: 4,
+  maxForce: 0.1,
+  edgeBehavior: 'wrap',
+  edgeMargin: 50,
+  trailLength: 10,
+  attractionForce: 1.0,
+};
+
+// Performance optimization - reuse vectors
+const tmpVec1 = { x: 0, y: 0 };
+
+// Create a spatial grid key from position
+
+// Update the spatial grid with boid positions - optimized to reduce memory allocation
+const updateSpatialGrid = (
+  boids: Boid[],
+  cellSize: number,
+  existingGrid?: Map<string, number[]>
+): Map<string, number[]> => {
+  // Reuse existing grid if provided
+  const grid = existingGrid || new Map<string, number[]>();
+  
+  // Clear existing grid entries instead of creating a new map
+  if (existingGrid) {
+    grid.forEach((arr) => {
+      arr.length = 0; // Clear array without allocating new one
+    });
+  }
+  
+  for (let i = 0; i < boids.length; i++) {
+    const boid = boids[i];
+    const gridX = Math.floor(boid.position.x / cellSize);
+    const gridY = Math.floor(boid.position.y / cellSize);
+    const cellKey = `${gridX},${gridY}`;
+    
+    boid.gridCell = cellKey;
+    
+    let cell = grid.get(cellKey);
+    if (!cell) {
+      cell = [];
+      grid.set(cellKey, cell);
+    }
+    cell.push(i);
+  }
+  
+  return grid;
+};
+
+// Cache neighboring cell calculations
+const cellCache = new Map<string, string[]>();
+
+// Get neighboring cells for a given position
+const getNeighboringCells = (
+  x: number,
+  y: number,
+  cellSize: number,
+  radius: number
+): string[] => {
+  const radiusCells = Math.ceil(radius / cellSize);
+  const cellX = Math.floor(x / cellSize);
+  const cellY = Math.floor(y / cellSize);
+  
+  // Create cache key
+  const cacheKey = `${cellX},${cellY},${radiusCells}`;
+  
+  // Check cache
+  const cached = cellCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  
+  // Create new array only if not in cache
+  const cells: string[] = [];
+  
+  for (let i = -radiusCells; i <= radiusCells; i++) {
+    for (let j = -radiusCells; j <= radiusCells; j++) {
+      cells.push(`${cellX + i},${cellY + j}`);
+    }
+  }
+  
+  // Store in cache for future use
+  if (cellCache.size > 1000) {
+    // Prevent unbounded growth
+    const firstKey = cellCache.keys().next().value;
+    if (firstKey !== undefined) {
+      cellCache.delete(firstKey);
+    }
+  }
+  cellCache.set(cacheKey, cells);
+  
+  return cells;
+};
+
+// Get nearby boid indices using spatial grid - optimized to reuse arrays
+const getNearbyBoidIndices = (
+  boid: Boid,
+  grid: Map<string, number[]>,
+  cellSize: number,
+  radius: number,
+  resultArray: number[] = []
+): number[] => {
+  // Clear the result array instead of creating a new one
+  resultArray.length = 0;
+  
+  const neighboringCells = getNeighboringCells(
+    boid.position.x,
+    boid.position.y,
+    cellSize,
+    radius
+  );
+  
+  for (const cell of neighboringCells) {
+    const cellBoids = grid.get(cell);
+    if (cellBoids) {
+      for (let i = 0; i < cellBoids.length; i++) {
+        resultArray.push(cellBoids[i]);
+      }
+    }
+  }
+  
+  return resultArray;
+};
+
+/**
+ * Create a new boid with random position and velocity
+ */
+export const createBoid = (
+  id: number,
+  canvasWidth: number,
+  canvasHeight: number,
+  maxHistoryLength = 10
+): Boid => {
+  return {
+    id,
+    position: {
+      x: Math.random() * canvasWidth,
+      y: Math.random() * canvasHeight,
+    },
+    velocity: {
+      x: (Math.random() * 2 - 1) * 2,
+      y: (Math.random() * 2 - 1) * 2,
+    },
+    acceleration: { x: 0, y: 0 },
+    history: [],
+    maxHistoryLength,
+  };
+};
+
+// Cached arrays for neighboring boids
+const nearbyIndicesCache: number[] = [];
+
+/**
+ * Create an initial state with a given number of boids
+ */
+export const createInitialState = (
+  numBoids: number,
+  canvasWidth: number,
+  canvasHeight: number
+): BoidsState => {
+  const boids: Boid[] = [];
+  const cellSize = DEFAULT_PARAMETERS.perceptionRadius;
+
+  for (let i = 0; i < numBoids; i++) {
+    boids.push(createBoid(i, canvasWidth, canvasHeight, DEFAULT_PARAMETERS.trailLength));
+  }
+
+  // Create initial spatial grid
+  const spatialGrid = updateSpatialGrid(boids, cellSize);
+
+  return {
+    boids,
+    parameters: { ...DEFAULT_PARAMETERS }, // Clone to avoid reference issues
+    canvasWidth,
+    canvasHeight,
+    particleType: 'disk',
+    isRunning: true,
+    showPerceptionRadius: false,
+    spatialGrid,
+    gridCellSize: cellSize,
+    cursorPosition: null,
+    isAttracting: false,
+    colorizationMode: 'default'
+  };
+};
+
+// Optimized vector operations that modify inputs rather than creating new objects
+// This significantly reduces garbage collection pressure
+
+// Add v2 to v1 in-place
+export const addInPlace = (v1: Vector2D, v2: Vector2D): Vector2D => {
+  v1.x += v2.x;
+  v1.y += v2.y;
+  return v1;
+};
+
+// Subtract v2 from v1 in-place
+export const subtractInPlace = (v1: Vector2D, v2: Vector2D, result: Vector2D): Vector2D => {
+  result.x = v1.x - v2.x;
+  result.y = v1.y - v2.y;
+  return result;
+};
+
+// Multiply v by scalar in-place
+export const multiplyInPlace = (v: Vector2D, scalar: number): Vector2D => {
+  v.x *= scalar;
+  v.y *= scalar;
+  return v;
+};
+
+// Set vector values
+export const setVector = (v: Vector2D, x: number, y: number): Vector2D => {
+  v.x = x;
+  v.y = y;
+  return v;
+};
+
+// Square of magnitude (avoids sqrt for performance)
+export const magnitudeSq = (v: Vector2D): number => {
+  return v.x * v.x + v.y * v.y;
+};
+
+// Square of distance (avoids sqrt for performance)
+export const distanceSq = (v1: Vector2D, v2: Vector2D): number => {
+  const dx = v1.x - v2.x;
+  const dy = v1.y - v2.y;
+  return dx * dx + dy * dy;
+};
+
+// Normalize a vector in-place
+export const normalizeInPlace = (v: Vector2D): Vector2D => {
+  const mag = Math.sqrt(v.x * v.x + v.y * v.y);
+  if (mag > 0.0001) {
+    v.x /= mag;
+    v.y /= mag;
+  } else {
+    v.x = 0;
+    v.y = 0;
+  }
+  return v;
+};
+
+// Limit magnitude of a vector in-place
+export const limitInPlace = (v: Vector2D, max: number): Vector2D => {
+  const magSq = v.x * v.x + v.y * v.y;
+  if (magSq > max * max) {
+    const mag = Math.sqrt(magSq);
+    v.x = (v.x / mag) * max;
+    v.y = (v.y / mag) * max;
+  }
+  return v;
+};
+
+/**
+ * Calculate steering force for alignment behavior with spatial optimization
+ */
+export const align = (
+  boid: Boid,
+  boids: Boid[],
+  nearbyIndices: number[],
+  parameters: BoidsParameters,
+  result: Vector2D
+): Vector2D => {
+  // Initialize result vector
+  result.x = 0;
+  result.y = 0;
+  
+  let total = 0;
+  const perceptionRadiusSq = parameters.perceptionRadius * parameters.perceptionRadius;
+
+  for (const idx of nearbyIndices) {
+    const other = boids[idx];
+    if (other.id !== boid.id) {
+      const d = distanceSq(boid.position, other.position);
+      if (d < perceptionRadiusSq) {
+        result.x += other.velocity.x;
+        result.y += other.velocity.y;
+        total++;
+      }
+    }
+  }
+
+  if (total > 0) {
+    result.x /= total;
+    result.y /= total;
+
+    // Normalize to get direction
+    normalizeInPlace(result);
+    
+    // Scale to max speed
+    multiplyInPlace(result, parameters.maxSpeed);
+    
+    // Calculate steering force: desired - current
+    subtractInPlace(result, boid.velocity, result);
+    
+    // Limit the force
+    limitInPlace(result, parameters.maxForce);
+  }
+
+  return result;
+};
+
+/**
+ * Calculate steering force for cohesion behavior with spatial optimization
+ */
+export const cohesion = (
+  boid: Boid,
+  boids: Boid[],
+  nearbyIndices: number[],
+  parameters: BoidsParameters,
+  result: Vector2D
+): Vector2D => {
+  // Initialize result vector
+  result.x = 0;
+  result.y = 0;
+  
+  let total = 0;
+  const perceptionRadiusSq = parameters.perceptionRadius * parameters.perceptionRadius;
+
+  for (const idx of nearbyIndices) {
+    const other = boids[idx];
+    if (other.id !== boid.id) {
+      const d = distanceSq(boid.position, other.position);
+      if (d < perceptionRadiusSq) {
+        result.x += other.position.x;
+        result.y += other.position.y;
+        total++;
+      }
+    }
+  }
+
+  if (total > 0) {
+    result.x /= total;
+    result.y /= total;
+
+    // Get desired direction - difference between center and current position
+    subtractInPlace(result, boid.position, result);
+    
+    // Normalize and scale
+    const mag = Math.sqrt(result.x * result.x + result.y * result.y);
+    if (mag > 0.0001) {
+      result.x = (result.x / mag) * parameters.maxSpeed;
+      result.y = (result.y / mag) * parameters.maxSpeed;
+      
+      // Subtract current velocity to get steering force
+      result.x -= boid.velocity.x;
+      result.y -= boid.velocity.y;
+      
+      // Limit force
+      limitInPlace(result, parameters.maxForce);
+    }
+  }
+
+  return result;
+};
+
+/**
+ * Calculate steering force for separation behavior with spatial optimization
+ */
+export const separation = (
+  boid: Boid,
+  boids: Boid[],
+  nearbyIndices: number[],
+  parameters: BoidsParameters,
+  result: Vector2D
+): Vector2D => {
+  // Initialize result vector
+  result.x = 0;
+  result.y = 0;
+  
+  let total = 0;
+  const perceptionRadiusSq = parameters.perceptionRadius * parameters.perceptionRadius;
+
+  for (const idx of nearbyIndices) {
+    const other = boids[idx];
+    if (other.id !== boid.id) {
+      const d = distanceSq(boid.position, other.position);
+      if (d < perceptionRadiusSq && d > 0) {
+        // Calculate difference vector
+        tmpVec1.x = boid.position.x - other.position.x;
+        tmpVec1.y = boid.position.y - other.position.y;
+        
+        // Weight by distance (closer boids are more important)
+        const dist = Math.sqrt(d);
+        tmpVec1.x /= dist;
+        tmpVec1.y /= dist;
+        
+        result.x += tmpVec1.x;
+        result.y += tmpVec1.y;
+        total++;
+      }
+    }
+  }
+
+  if (total > 0) {
+    result.x /= total;
+    result.y /= total;
+    
+    // Normalize to get direction
+    normalizeInPlace(result);
+    
+    // Scale to max speed
+    multiplyInPlace(result, parameters.maxSpeed);
+    
+    // Calculate steering force
+    result.x -= boid.velocity.x;
+    result.y -= boid.velocity.y;
+    
+    // Limit force
+    limitInPlace(result, parameters.maxForce);
+  }
+
+  return result;
+};
+
+/**
+ * Calculate steering force towards cursor when clicked/touched
+ */
+export const attraction = (
+  boid: Boid,
+  targetPosition: Vector2D,
+  parameters: BoidsParameters,
+  result: Vector2D
+): Vector2D => {
+  // Calculate direction towards target
+  subtractInPlace(targetPosition, boid.position, result);
+  
+  const distanceSq = result.x * result.x + result.y * result.y;
+  
+  if (distanceSq > 0) {
+    const distance = Math.sqrt(distanceSq);
+    
+    // Normalize direction
+    result.x /= distance;
+    result.y /= distance;
+    
+    // Stronger attraction for distant boids
+    const strength = Math.min(3.0, 1000 / (distance + 1));
+    
+    // Scale by max speed and strength
+    result.x *= parameters.maxSpeed * strength;
+    result.y *= parameters.maxSpeed * strength;
+    
+    // Calculate steering force
+    result.x -= boid.velocity.x;
+    result.y -= boid.velocity.y;
+    
+    // Limit force and apply attraction multiplier
+    limitInPlace(result, parameters.maxForce * 2);
+    multiplyInPlace(result, parameters.attractionForce * 2);
+  } else {
+    result.x = 0;
+    result.y = 0;
+  }
+  
+  return result;
+};
+
+/**
+ * Handle edges based on the configured edge behavior
+ * Fixed handling for trail rendering across edges
+ */
+export const handleEdges = (
+  boid: Boid,
+  canvasWidth: number,
+  canvasHeight: number,
+  parameters: BoidsParameters
+): void => {
+  const { position, velocity } = boid;
+  const { edgeBehavior } = parameters;
+  
+  // Flag to detect if wrapping occurred
+  let didWrap = false;
+
+  if (edgeBehavior === 'wrap') {
+    // Wrap around the edges
+    if (position.x < 0) {
+      position.x = canvasWidth;
+      didWrap = true;
+    }
+    if (position.y < 0) {
+      position.y = canvasHeight;
+      didWrap = true;
+    }
+    if (position.x > canvasWidth) {
+      position.x = 0;
+      didWrap = true;
+    }
+    if (position.y > canvasHeight) {
+      position.y = 0;
+      didWrap = true;
+    }
+    
+    // Clear history on wrap to prevent trails spanning across the screen
+    if (didWrap) {
+      boid.history.length = 0;
+    }
+  } else if (edgeBehavior === 'bounce') {
+    // Bounce off the edges
+    let bounced = false;
+    
+    if (position.x < 0 || position.x > canvasWidth) {
+      velocity.x *= -1;
+      bounced = true;
+    }
+    if (position.y < 0 || position.y > canvasHeight) {
+      velocity.y *= -1;
+      bounced = true;
+    }
+    
+    // Ensure we're inside the canvas
+    position.x = Math.max(0, Math.min(position.x, canvasWidth));
+    position.y = Math.max(0, Math.min(position.y, canvasHeight));
+    
+    // Clear history on bounce for smoother visual
+    if (bounced) {
+      boid.history.length = 0;
+    }
+  }
+};
+
+// Reusable vectors for force calculations
+const alignForceVec = { x: 0, y: 0 };
+const cohesionForceVec = { x: 0, y: 0 };
+const separationForceVec = { x: 0, y: 0 };
+const attractionForceVec = { x: 0, y: 0 };
+const directionVec = { x: 0, y: 0 };
+
+/**
+ * Update a single boid's position based on the flocking algorithm
+ * Using spatial optimization for significant performance improvement
+ */
+export const updateBoid = (
+  boid: Boid,
+  boids: Boid[],
+  nearbyIndices: number[],
+  parameters: BoidsParameters,
+  canvasWidth: number,
+  canvasHeight: number,
+  cursorPosition: Vector2D | null,
+  isAttracting: boolean
+): void => {
+  // Reset acceleration
+  boid.acceleration.x = 0;
+  boid.acceleration.y = 0;
+  
+  // Direct attraction to cursor if enabled
+  if (isAttracting && cursorPosition) {
+    // Calculate direction to cursor
+    subtractInPlace(cursorPosition, boid.position, directionVec);
+    const distanceToCursor = Math.sqrt(directionVec.x * directionVec.x + directionVec.y * directionVec.y);
+    
+    if (distanceToCursor > 5) { // Only attract if not too close
+      // Normalize and apply attraction
+      directionVec.x /= distanceToCursor;
+      directionVec.y /= distanceToCursor;
+      
+      // Attraction factor decreases with distance
+      const attractionStrength = Math.min(1.0, 100 / distanceToCursor) * parameters.attractionForce;
+      
+      // Apply weighted attraction to velocity
+      boid.velocity.x = boid.velocity.x * 0.8 + directionVec.x * parameters.maxSpeed * attractionStrength * 0.2;
+      boid.velocity.y = boid.velocity.y * 0.8 + directionVec.y * parameters.maxSpeed * attractionStrength * 0.2;
+    }
+  } else {
+    // Normal flocking behavior
+    
+    // Calculate alignment force
+    align(boid, boids, nearbyIndices, parameters, alignForceVec);
+    multiplyInPlace(alignForceVec, parameters.alignmentForce);
+    
+    // Calculate cohesion force
+    cohesion(boid, boids, nearbyIndices, parameters, cohesionForceVec);
+    multiplyInPlace(cohesionForceVec, parameters.cohesionForce);
+    
+    // Calculate separation force
+    separation(boid, boids, nearbyIndices, parameters, separationForceVec);
+    multiplyInPlace(separationForceVec, parameters.separationForce);
+    
+    // Add all forces to acceleration
+    boid.acceleration.x += alignForceVec.x + cohesionForceVec.x + separationForceVec.x;
+    boid.acceleration.y += alignForceVec.y + cohesionForceVec.y + separationForceVec.y;
+    
+    // Apply cursor attraction as a separate force if active
+    if (isAttracting && cursorPosition) {
+      attraction(boid, cursorPosition, parameters, attractionForceVec);
+      boid.acceleration.x += attractionForceVec.x;
+      boid.acceleration.y += attractionForceVec.y;
+    }
+    
+    // Update velocity with acceleration
+    boid.velocity.x += boid.acceleration.x;
+    boid.velocity.y += boid.acceleration.y;
+  }
+  
+  // Always limit velocity to max speed
+  limitInPlace(boid.velocity, parameters.maxSpeed);
+  
+  // Save position history for trails (limit to parameter length)
+  if (boid.history.length >= parameters.trailLength) {
+    if (boid.history.length > 0) {
+      // Reuse first history point instead of shifting
+      const firstPoint = boid.history.shift()!;
+      firstPoint.x = boid.position.x;
+      firstPoint.y = boid.position.y;
+      boid.history.push(firstPoint);
+    }
+  } else {
+    boid.history.push({ x: boid.position.x, y: boid.position.y });
+  }
+  
+  // Update position
+  boid.position.x += boid.velocity.x;
+  boid.position.y += boid.velocity.y;
+  
+  // Handle edges
+  handleEdges(boid, canvasWidth, canvasHeight, parameters);
+};
+
+/**
+ * Update all boids in the simulation
+ * With spatial partitioning for O(n) performance instead of O(n²)
+ */
+export const updateBoids = (state: BoidsState): BoidsState => {
+  if (!state.isRunning) return state;
+  
+  const { boids, canvasWidth, canvasHeight, parameters, gridCellSize, cursorPosition, isAttracting } = state;
+  
+  // Update spatial grid for this frame - reuse existing grid
+  const spatialGrid = updateSpatialGrid(boids, gridCellSize, state.spatialGrid);
+  
+  // Update each boid using spatial optimization
+  for (let i = 0; i < boids.length; i++) {
+    const boid = boids[i];
+    
+    // Get nearby boids using cached array
+    const nearbyIndices = getNearbyBoidIndices(
+      boid,
+      spatialGrid,
+      gridCellSize,
+      parameters.perceptionRadius,
+      nearbyIndicesCache
+    );
+    
+    updateBoid(
+      boid,
+      boids,
+      nearbyIndices,
+      parameters,
+      canvasWidth,
+      canvasHeight,
+      cursorPosition,
+      isAttracting
+    );
+  }
+  
+  // Return updated state with minimal cloning
+  return {
+    ...state,
+    spatialGrid,
+  };
+}; 
+
+
+================================================
+FILE: .github/workflows/deploy.yml
+================================================
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 
+

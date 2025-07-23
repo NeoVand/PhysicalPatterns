@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGPU Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .status {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #064e3b;
+            border: 1px solid #10b981;
+        }
+        .error {
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+        }
+        .info {
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebGPU Support Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testWebGPU() {
+            const results = document.getElementById('results');
+            let html = '';
+            
+            // Test 1: Check if WebGPU exists
+            if ('gpu' in navigator) {
+                html += '<div class="status success">✓ navigator.gpu is available</div>';
+            } else {
+                html += '<div class="status error">✗ navigator.gpu is NOT available</div>';
+                html += '<div class="status info">Make sure you are using a compatible browser (Chrome 113+, Edge 113+, or Safari Technology Preview)</div>';
+                results.innerHTML = html;
+                return;
+            }
+            
+            // Test 2: Try to get adapter
+            try {
+                const adapter = await navigator.gpu.requestAdapter({
+                    powerPreference: 'high-performance'
+                });
+                
+                if (adapter) {
+                    html += '<div class="status success">✓ GPU Adapter obtained successfully</div>';
+                    
+                    // Get adapter info
+                    const adapterInfo = await adapter.requestAdapterInfo();
+                    html += '<div class="status info">Adapter Info:<pre>' + JSON.stringify({
+                        vendor: adapterInfo.vendor,
+                        architecture: adapterInfo.architecture,
+                        device: adapterInfo.device,
+                        description: adapterInfo.description
+                    }, null, 2) + '</pre></div>';
+                    
+                    // Get adapter features
+                    const features = [...adapter.features];
+                    html += '<div class="status info">Supported Features:<pre>' + features.join('\n') + '</pre></div>';
+                    
+                    // Test 3: Try to get device
+                    try {
+                        const device = await adapter.requestDevice();
+                        html += '<div class="status success">✓ GPU Device created successfully</div>';
+                        
+                        // Test 4: Create a simple canvas and context
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 256;
+                        canvas.height = 256;
+                        
+                        const context = canvas.getContext('webgpu');
+                        if (context) {
+                            html += '<div class="status success">✓ WebGPU Canvas Context created successfully</div>';
+                            
+                            const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+                            html += '<div class="status info">Preferred Canvas Format: ' + presentationFormat + '</div>';
+                            
+                            context.configure({
+                                device,
+                                format: presentationFormat,
+                                alphaMode: 'opaque',
+                            });
+                            
+                            html += '<div class="status success">✓ WebGPU is fully functional!</div>';
+                        } else {
+                            html += '<div class="status error">✗ Failed to create WebGPU canvas context</div>';
+                        }
+                        
+                    } catch (deviceError) {
+                        html += '<div class="status error">✗ Failed to create GPU device: ' + deviceError.message + '</div>';
+                    }
+                    
+                } else {
+                    html += '<div class="status error">✗ No GPU adapter available</div>';
+                }
+                
+            } catch (adapterError) {
+                html += '<div class="status error">✗ Failed to request GPU adapter: ' + adapterError.message + '</div>';
+            }
+            
+            // Browser info
+            html += '<div class="status info">Browser Info:<pre>' + JSON.stringify({
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                vendor: navigator.vendor
+            }, null, 2) + '</pre></div>';
+            
+            results.innerHTML = html;
+        }
+        
+        // Run test on page load
+        testWebGPU();
+    </script>
+</body>
+</html> 
